@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0-preprint",
+  "date": "2026-08-16",
+  "statement": "c_E > 0.3805603",
+  "status": "PRELIMINARY_COMPOSITE_CERTIFICATE_PASS_UNREFEREED",
+  "target": "0.3805603",
+  "previous_pinned_lower_bound": "0.380554702762594012374583687722204899264569679656794709558276907639504536129582",
+  "improvement": "0.000005597237405987625416312277795100735430320343205290441723092360495463870418",
+  "central": {
+    "bins": [85, 86],
+    "ranges": [["-0.003125", "0"], ["0", "0.003125"]],
+    "certificate_rows": 150,
+    "parseval_prefixes": [191, 195, 200],
+    "recorded_checker_status": "PASS",
+    "recorded_integral_upper_mpfr": "2.62770434388489007452190373282e0",
+    "recorded_threshold_lower_mpfr": "2.62770446628300429655957281927e0",
+    "recorded_implied_bound_lower_mpfr": "3.80560317726447488726080215466e-1",
+    "recorded_D_margin_lower_mpfr": "1.22398114222037669086465328947e-7",
+    "verification_mode": "fresh directed-rounding C/MPFR run required by make verify"
+  },
+  "outer": {
+    "bins": 170,
+    "source_repository": "Leeham06972452/erdos-36-lower-bound",
+    "source_commit": "6bc610e40083ef61a40966dfb5d38612cabc4c5b",
+    "reported_max_D_upper_including_radius": "2.627538530873375790090272175878307131812586378826",
+    "verification_mode": "SHA-256-pinned report validation; upstream Arb computation is not rerun"
+  },
+  "lean_checked_claims": [],
+  "lean_verified": false,
+  "independently_reproduced": false,
+  "peer_reviewed": false,
+  "solves_erdos_problem_36": false
+}

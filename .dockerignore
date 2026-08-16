@@ -1,0 +1,11 @@
+.git
+build
+upstream/cache
+internal-handoff
+__pycache__
+.pytest_cache
+paper/*.pdf
+*.aux
+*.log
+*.fls
+*.out

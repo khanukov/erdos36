@@ -1,0 +1,35 @@
+{
+  "title": "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem",
+  "upload_type": "publication",
+  "publication_type": "preprint",
+  "publication_date": "2026-08-16",
+  "description": "Preliminary and unrefereed computer-assisted certificate supporting the proposed composite lower bound c_E > 0.3805603. The new central two-bin computation is checked with directed-rounding MPFR; the remaining 170 bins use SHA-256-pinned reports from Price's upstream Arb computation. This is not a solution of Erdős Problem 36, has not been independently reproduced, and is not Lean-verified.",
+  "creators": [
+    {
+      "name": "Khanukov, Dmitry"
+    }
+  ],
+  "keywords": [
+    "Erdős Problem 36",
+    "minimum overlap",
+    "Parseval identity",
+    "computer-assisted proof",
+    "interval arithmetic"
+  ],
+  "license": "cc-by-4.0",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/khanukov/erdos36",
+      "relation": "isSupplementedBy",
+      "scheme": "url",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://github.com/Leeham06972452/erdos-36-lower-bound/tree/6bc610e40083ef61a40966dfb5d38612cabc4c5b",
+      "relation": "references",
+      "scheme": "url",
+      "resource_type": "software"
+    }
+  ]
+}
