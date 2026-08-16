@@ -2,10 +2,12 @@
 
 ## Current state
 
-This document is a release procedure, not release authorization. Preparing it
-does not create a tag, GitHub Release, Zenodo record, arXiv submission, or
-community post. This repository version has no DOI. No external contact or
-publication should be made as part of documentation preparation.
+This document is a release procedure, not release authorization. The
+`publish-priority-preprint` workflow is deliberately armed only by a successful
+`main`-branch `verify-priority-package` run. Merging that workflow to `main`
+can therefore create the tag and public GitHub prerelease. Do not merge or
+manually dispatch publication work until the author has authorized publication
+and the Zenodo GitHub integration is enabled for this repository.
 
 The intended first public version is `0.1.0-preprint`, with tag
 `v0.1.0-preprint`. It must be described as preliminary, unrefereed, not a
@@ -35,6 +37,9 @@ The following are blocking for an honest priority release:
   calling the upstream reports independently rerun;
 - repository settings needed to protect the release and tag are enabled before
   publication.
+- the author's Zenodo account is connected to GitHub and `khanukov/erdos36` is
+  enabled in the Zenodo GitHub repository list before the publishing commit is
+  merged.
 
 Independent reproduction and a Lean proof are not prerequisites for an
 accurately labelled preliminary timestamp. Their absence is a prerequisite
@@ -74,13 +79,18 @@ not be substituted for one another.
 
 ## GitHub release
 
-Create the tag and release only after all gates pass. Use:
+The `publish-priority-preprint` workflow creates the tag and release from the
+exact successful `main` verification run. It refuses to move an existing tag,
+checks the downloaded Actions artifact and its embedded provenance again, and
+uses:
 
 - tag: `v0.1.0-preprint`;
 - title: `v0.1.0-preprint — preliminary Parseval-prefix bound for Erdős Problem 36`;
+- status: public, non-draft GitHub prerelease;
 - classification: preliminary priority preprint, not an accepted result;
 - assets: the release ZIP, its companion `.sha256` file, and
-  `build/erdos36-preprint-0.1.0-preprint.pdf`.
+  `build/erdos36-preprint-0.1.0-preprint.pdf`, plus an external
+  `GITHUB_RELEASE_SHA256SUMS.txt` manifest.
 
 The release body should say:
 
@@ -103,36 +113,42 @@ is available for the repository, enable it before publishing; otherwise
 preserve the signed or protected tag, release checksum, and archival deposit
 as the public identity record.
 
-## Manual Zenodo workflow
+## Automatic GitHub-to-Zenodo workflow
 
-Use a manual Zenodo deposit for the archival record. Do not assume that the
-GitHub-Zenodo integration will include CI-generated release assets; that
-integration normally archives the tagged repository source rather than the
-custom release ZIP and verification evidence.
+Use the Zenodo GitHub integration for the first archival timestamp. Before the
+publishing commit reaches `main`, sign in to Zenodo through GitHub, synchronize
+the repository list, and enable `khanukov/erdos36`. The successful `main` CI
+then triggers `publish-priority-preprint`, which creates the annotated tag and
+GitHub prerelease. The enabled Zenodo integration receives that release event
+and archives the tagged repository snapshot.
 
-1. After the release gates pass but before creating the final tag, create an
-   unpublished Zenodo draft and select the resource type `Publication` and
-   subtype `Preprint`.
-2. Reserve a DOI in the draft if the DOI is to appear in the manuscript and
-   repository metadata. Reserving a DOI is not publication and must not be
-   described as a published record.
-3. If a DOI is reserved, add the exact DOI to the manuscript and metadata,
-   commit those changes, and rerun every release gate from that final commit.
-4. Create the protected tag and GitHub Release from that exact commit. Upload
-   the release ZIP, companion checksum, and preprint PDF to the Zenodo draft.
-5. Enter and independently compare the title, author, version, publication
-   date, description, keywords, license, repository URL, release URL, upstream
-   reference, and DOI against the final source. The main preprint is CC BY 4.0;
-   the archive's path-specific MIT and CC BY 4.0 terms remain recorded in
-   `LICENSE_SCOPE.md`.
-6. Download the draft files, verify their hashes, inspect the rendered record,
-   and only then publish the Zenodo version.
-7. Preserve later substantive corrections as linked new versions. Do not
-   replace a public priority record silently.
+Official setup references: [link the GitHub account][zenodo-link], choose
+`Sync now` and [enable the repository][zenodo-enable], then follow Zenodo's
+[GitHub release archiving flow][zenodo-archive].
 
-The current `.zenodo.json` is a metadata cross-check for this repository. A
-manual deposit must be checked field by field; the filename alone does not
-populate or publish a manual Zenodo draft.
+The automatic Zenodo record contains GitHub's source snapshot, not the custom
+GitHub Release assets. Consequently every load-bearing source file,
+certificate, verifier, upstream retrieval rule and hash, license, and metadata
+file must be in the tagged tree. The pinned upstream reports themselves remain
+runtime downloads and are not vendored. The deterministic release ZIP,
+generated verification evidence, compiled PDF, and their external manifest
+remain attached to the GitHub prerelease and are linked by its exact commit and
+Actions run.
+
+The GitHub integration does not support reserving the first version DOI in
+advance. After Zenodo finishes processing, record the version DOI and concept
+DOI, inspect the title, author, description, version, licenses, related links,
+and archived source snapshot, and verify that they match `.zenodo.json` and the
+tag. Add the DOI to `CITATION.cff`, the manuscript, and repository badges only
+in a later commit/version; never rewrite the published priority tag.
+
+If the Zenodo record does not appear, preserve the existing tag and prerelease,
+diagnose the integration, and do not silently recreate or retag the release.
+Preserve substantive corrections as linked new versions.
+
+[zenodo-link]: https://help.zenodo.org/docs/profile/linking-accounts/
+[zenodo-enable]: https://help.zenodo.org/docs/github/enable-repository/
+[zenodo-archive]: https://help.zenodo.org/docs/github/archive-software/github-upload/
 
 ## arXiv and community sequence
 

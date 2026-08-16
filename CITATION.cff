@@ -16,10 +16,12 @@ abstract: >-
   C/MPFR verifier; 170 outer bins rely on SHA-256-pinned upstream Arb reports.
   No claim is Lean-verified or independently reproduced.
 preferred-citation:
-  type: generic
+  type: unpublished
   title: "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
   authors:
     - family-names: Khanukov
       given-names: Dmitry
   year: 2026
-  notes: "Preliminary, unrefereed preprint; no DOI has been assigned."
+  version: "0.1.0-preprint"
+  status: preprint
+  notes: "Preliminary, unrefereed preprint."
