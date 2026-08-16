@@ -28,7 +28,9 @@ jobs:
       - name: Install verifier and manuscript dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential libgmp-dev libmpfr-dev latexmk texlive-latex-base texlive-latex-extra texlive-fonts-recommended
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libgmp-dev libmpfr-dev latexmk lmodern \
+            texlive-latex-base texlive-latex-extra texlive-fonts-recommended
       - name: Verify one fresh composite chain
         env:
           GITHUB_TOKEN: ${{ github.token }}
