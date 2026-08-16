@@ -1,0 +1,341 @@
+\documentclass[11pt]{amsart}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={A Parseval-Prefix Improvement for Erdos Minimum-Overlap Problem},pdfauthor={Dmitry Khanukov},pdfsubject={Preliminary computer-assisted lower bound for Erdos problem 36},pdfkeywords={Erdos, minimum overlap, Parseval, computer-assisted proof}}
+\usepackage{url}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\DeclareMathOperator{\sinc}{sinc}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\dd}{\,d}
+\newcommand{\one}{\mathbf 1}
+
+\title{A Parseval-Prefix Improvement for Erd\H{o}s' Minimum-Overlap Problem}
+\input{author-config.tex}
+\date{August 16, 2026}
+
+\begin{document}
+
+\begin{abstract}
+We give a computer-assisted proof that the asymptotic constant in Erd\H{o}s'
+minimum-overlap problem satisfies
+\[
+  c_E>0.3805603.
+\]
+The previous certified lower bound was
+$0.380554702762594012\ldots$.  The new ingredient is a finite
+Parseval-prefix inequality, projected directly into the overlap-profile dual
+language and used to replace the two binding central mean bins of a public
+172-bin certificate.  A directed-rounding MPFR program verifies the new
+central positive-part integral; the remaining 170 bins are inherited from
+pinned Arb reports with verified hashes.  The optimizer that found the
+multipliers is not part of the proof.  This manuscript is preliminary and
+unrefereed, and the proof has not been formalized or verified in Lean.
+\end{abstract}
+
+\maketitle
+
+\begin{center}
+\textbf{Status: Preliminary and unrefereed.}
+\end{center}
+
+\section{Introduction}
+
+For a partition
+\[
+ A\sqcup B=\{1,\ldots,2N\},\qquad |A|=|B|=N,
+\]
+let
+\[
+ r_{A,B}(m)=|\{(a,b)\in A\times B:a-b=m\}|,
+ \qquad
+ M(N)=\min_{A,B}\max_m r_{A,B}(m).
+\]
+Define
+\[
+ c_E:=\liminf_{N\to\infty}\frac{M(N)}{N}.
+\]
+The minimum-overlap problem, originating with Erd\H{o}s
+\cite{Erdos1955,Moser1959}, asks for the asymptotic behavior of $M(N)$.
+
+Haugland developed strong upper constructions
+\cite{Haugland1996,Haugland2016}.  White introduced the modern Fourier and
+convex-optimization approach to lower bounds \cite{White2022}.  Price later
+publicly posted a compact positive-part dual certificate, checked with Arb, proving
+$c_E>0.38055470$ and recording the sharper numerical consequence
+$0.380554702762594012\ldots$ \cite{Price2026}.
+
+The purpose of this note is to improve that certified lower bound.  Parseval
+constraints were already present in White's larger optimization framework.
+Our contribution is not the discovery of Parseval's identity; it is the direct
+profile-space prefix inequality below, its use in a compact dual certificate,
+and a new directed-rounding verification.
+
+The source package and reproduction instructions are available at
+\begin{center}
+\url{https://github.com/khanukov/erdos36}.
+\end{center}
+
+\subsection*{Status and trust boundary}
+This is a preliminary, unrefereed computer-assisted result.  The two central
+mean bins are checked by the new directed-rounding MPFR verifier included in
+the repository.  The other 170 bins are not rerun locally with Arb by this
+package: they are inherited from Price's publicly posted per-bin Arb reports at the
+pinned upstream commit, downloaded and checked against recorded SHA-256
+hashes, after which the package recomputes their largest reported upper
+endpoint.  Thus the outer-bin part trusts the pinned Price certificate and its
+recorded Arb run, whereas the central-bin computation has a fresh MPFR
+verification.  The new central pair has not yet received an independent
+clean-room reproduction or peer review, and the argument is not Lean-verified.
+
+
+The Price package has also been audited and rerun independently by the
+\texttt{occisn} project \cite{Occisn2026}.  Other recent lower-bound work uses
+agent-discovered convex relaxations \cite{KimPilanci2026} and Bochner/moment
+constraints \cite{Zanghi2026}; these bounds are numerically weaker than the
+Price certificate but provide useful alternative verification and relaxation
+machinery.  On the upper side, public AI-guided construction searches include
+TTT-Discover \cite{Yuksekgonul2026}.  We use none of these upper constructions
+in the lower-bound proof.
+
+\begin{theorem}\label{thm:main}
+The minimum-overlap constant satisfies
+\[
+ \boxed{c_E>0.3805603}.
+\]
+\end{theorem}
+
+\section{Continuous model and the positive-part dual}
+
+Let $h:[0,2]\to[0,1]$ be measurable with $\int_0^2h=1$, put $g=1-h$
+on $[0,2]$, and extend both functions by zero.  Define
+\[
+ p_h(t)=\int_{\R}h(x)g(x+t)\dd x,
+ \qquad -2\le t\le2.
+\]
+Then $p_h\ge0$, $\int_{-2}^2p_h=1$, and the standard step-function reduction
+gives
+\[
+ c_E\ge \inf_h\|p_h\|_\infty.
+\]
+We refer to \cite{White2022,Price2026} for a complete proof of the reduction
+and for the ordinary moment and Fourier inequalities used by the certificate.
+
+The following elementary dual principle is the mechanism used throughout.
+
+\begin{lemma}[Positive-part dual]\label{lem:dual}
+Suppose functions $\phi_j$ and constants $B_j$ satisfy
+\[
+ \int_{-2}^2p(t)\phi_j(t)\dd t\le B_j
+\]
+for every admissible profile in a fixed mean bin.  If $\lambda_j\ge0$ and
+\[
+ q(t)=1+\sum_j\lambda_j(B_j-\phi_j(t)),
+\]
+then
+\[
+ \|p\|_\infty\ge
+ \left(\int_{-2}^2\max(q(t),0)\dd t\right)^{-1}.
+\]
+\end{lemma}
+
+\begin{proof}
+The assumed inequalities give $\int pq\ge1$.  Since $p\ge0$,
+\[
+ 1\le\int pq\le\int p q_+
+ \le\|p\|_\infty\int q_+.
+\]
+\end{proof}
+
+\section{The Parseval-prefix inequality}
+
+For $k\in\Z$ define
+\[
+ H_k=\int_0^2h(x)e^{ik\pi(x-1)}\dd x.
+\]
+At nonzero integer modes the transform of $g=1-h$ equals $-H_k$, because
+\[
+ \int_0^2e^{ik\pi(x-1)}\dd x=0.
+\]
+The Fourier transform of the overlap therefore gives
+\begin{equation}\label{eq:integer-cos}
+ C_k:=\int_{-2}^2p(t)\cos(k\pi t)\dd t=-|H_k|^2,
+ \qquad k\ge1.
+\end{equation}
+
+\begin{lemma}[Parseval identity]\label{lem:parseval}
+For every admissible $h$,
+\[
+ \boxed{p(0)+\sum_{k=1}^\infty |H_k|^2=\frac12}.
+\]
+Consequently, for every integer $K\ge1$,
+\begin{equation}\label{eq:prefix}
+ \boxed{-\sum_{k=1}^K\int_{-2}^2p(t)\cos(k\pi t)\dd t\le\frac12}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+With the period-$2$ Fourier normalization, Parseval gives
+\[
+ 1+2\sum_{k\ge1}|H_k|^2=2\int_0^2h(x)^2\dd x,
+\]
+because $H_0=\int_0^2h=1$.  Also
+\[
+ p(0)=\int_0^2h(x)(1-h(x))\dd x
+ =1-\int_0^2h(x)^2\dd x.
+\]
+Combining the two identities proves the equality.  Since $p(0)\ge0$, the
+finite prefix bound follows from \eqref{eq:integer-cos}.
+\end{proof}
+
+\begin{remark}
+The force of \eqref{eq:prefix} is joint: the integer Fourier modes share one
+energy budget.  Summing unrelated one-frequency inequalities loses this
+coupling.
+\end{remark}
+
+\section{The central replacement certificate}
+
+The pinned upstream certificate partitions the possible first moment into 172
+bins.  Its binding symmetric pair consists of bins 85 and 86,
+\[
+ [-0.003125,0],\qquad [0,0.003125].
+\]
+The new certificate uses only even rows, so the same multipliers cover both
+bins.  It contains the rows shown in Table~\ref{tab:rows}.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lr}
+\toprule
+Row type & Number \\
+\midrule
+Second-moment row & 1 \\
+Ordinary cosine upper rows & 71 \\
+Integer-$\pi$ cosine upper rows & 75 \\
+Parseval-prefix rows, $K=191,195,200$ & 3 \\
+\midrule
+Total & 150 \\
+\bottomrule
+\end{tabular}
+\caption{Rows in the central dual certificate.}
+\label{tab:rows}
+\end{table}
+
+For the associated polynomial $q$, the directed-rounding checker proves
+\begin{equation}\label{eq:central-D}
+ \int_{-2}^2 q_+(t)\dd t
+ \le 2.62770434388489007452190373282.
+\end{equation}
+At the theorem target,
+\[
+ \frac1{0.3805603}
+ =2.6277044662830042965\ldots,
+\]
+so the certified $D$-side margin is larger than $1.22\times10^{-7}$.
+Lemma~\ref{lem:dual} therefore proves the target on both central bins.
+
+For the other 170 bins, the pinned upstream per-bin Arb report gives
+\[
+ D_I\le2.627538530873375790090272175878307131812586378826,
+\]
+which is below $1/0.3805603$ by more than $1.65\times10^{-4}$.  Thus every
+outer certificate remains valid at the new target.
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+The new symmetric central certificate and the 170 pinned outer certificates cover
+the full mean range $[-1,1]$.  Let
+\[
+ \begin{aligned}
+ D_{\mathrm c}&:=2.62770434388489007452190373282,\\
+ D_{\mathrm o}&:=2.627538530873375790090272175878307131812586378826,\\
+ D_*&:=\max\{D_{\mathrm c},D_{\mathrm o}\}.
+ \end{aligned}
+\]
+The certified bounds above give
+$D_*<1/0.3805603$, uniformly over all 172 bins.  Lemma~\ref{lem:dual}
+therefore yields
+\[
+ \|p_h\|_\infty\ge \frac1{D_*}>0.3805603
+\]
+for every admissible $h$, and hence
+$\inf_h\|p_h\|_\infty\ge1/D_*>0.3805603$.  The standard step-function
+reduction then gives $c_E>0.3805603$.
+\end{proof}
+
+\section{Directed-rounding verification}
+
+The optimizer that produced the multipliers is not trusted.  The trusted input
+is the decimal certificate and the analytic inequalities.  The C checker uses
+96-bit MPFR endpoint arithmetic with directed rounding.  It performs Taylor
+sign tests for $q$ on a dyadic subdivision of $[-2,2]$.  On certified-positive
+components it uses the explicit antiderivative of the trigonometric polynomial;
+on unresolved terminal cells it adds a conservative upper rectangle.
+
+In this version, the SHA-256 digest of
+\texttt{certificate/central\_certificate.json} is
+\begin{center}
+\small\texttt{8e085e786271759acb9063d82e84edcfdd3d73b6f556eecd39bc98c4f9911a8b}.
+\end{center}
+
+The recorded reference run reports
+\[
+ \begin{aligned}
+ D_{\rm upper}&=2.62770434388489007452190373282,\\
+ (1/C)_{\rm lower}&=2.62770446628300429655957281927,\\
+ C_{\rm implied,lower}&=0.380560317726447488726080215466.
+ \end{aligned}
+\]
+It visits $91{,}420$ cells and combines certified-positive cells into eight
+components.  A separate embedding checker compares the embedded frequency
+lists, multipliers, ordinary-cosine bounds, second-moment data, and target with
+the corresponding entries in the JSON certificate.
+
+The 170 outer bins are tied to the exact upstream commit and SHA-256 list.  The
+repository includes a fetcher and a checker that recompute the maximum outer
+$D_I$ from the pinned CSV report.  It does not locally rerun the upstream Arb
+verification.  The trust boundary and reproduction commands are documented
+with the source package.
+
+\section{Discussion}
+
+The improvement is numerically modest,
+\[
+ 0.3805603-0.380554702762594012\ldots
+ \approx5.60\times10^{-6},
+\]
+but it is a strict certified advance for a mature open problem.  More
+importantly, it confirms that joint Fourier realizability information can
+strengthen the compact profile-space dual.
+
+A finite integer prefix uses only the radial energy at integer modes.  Natural
+next steps are shifted Parseval lattices $((k+\theta)\pi)$, which couple cosine
+and sine information, and exact multi-frequency bounded-density support cuts.
+These may eventually be fitted to the contact structure of the best known
+upper constructions.
+
+\section*{Acknowledgments}
+The author thanks Ethan Patrick White for the Fourier/convex framework and Liam
+Price for publishing the 172-bin certificate and Arb verifier on which the
+outer-bin part of this result is based.  The author thanks the maintainers of
+the \texttt{occisn} project for their public independent audit of the upstream
+certificate.
+
+\section*{AI-assistance disclosure}
+AI-assisted tools were used during exploratory research, drafting, and software
+development.  They are not authors and their outputs are not treated as
+mathematical evidence.  The named author is responsible for the statement,
+proof, attribution, certificate, and released software.
+
+\input{references.tex}
+
+\end{document}

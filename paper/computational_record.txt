@@ -1,0 +1,26 @@
+Recorded central C/MPFR reference run (96-bit precision, depth 7)
+Status: PASS
+
+target_exact=0.3805603
+target_binary64_diagnostic=0.38056030000000002
+integral_upper_mpfr=2.62770434388489007452190373282e0
+threshold_lower_mpfr=2.62770446628300429655957281927e0
+implied_bound_lower_mpfr=3.80560317726447488726080215466e-1
+D_margin_lower_mpfr=1.22398114222037669086465328947e-7
+integral_upper_binary64_diagnostic=2.6277043438848904
+threshold_lower_binary64_diagnostic=2.6277044662830042
+implied_bound_lower_binary64_diagnostic=0.38056031772644744
+D_margin_lower_binary64_diagnostic=1.2239811422203767e-07
+M1_upper=53.948287636430635
+M2_upper=15370.080643538129
+nodes=91420
+positive_cells=1684
+negative_cells=983
+terminal=43555
+local_derivative=90821
+components=8
+
+The PASS comparison occurs inside MPFR with directed rounding. Fields ending
+in `_mpfr` are printed by MPFR with the displayed directed rounding and are
+rigorous decimal enclosures. Fields ending in `_binary64_diagnostic` are not
+proof endpoints.

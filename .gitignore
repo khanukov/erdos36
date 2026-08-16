@@ -1,0 +1,29 @@
+# Build products
+build/
+*.aux
+*.bbl.tmp
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+verifier/verify_central_mpfr
+paper/*.pdf
+
+# Downloaded upstream cache
+upstream/cache/
+
+# Internal handoff must never be public
+internal-handoff/
+
+# OS/editor
+.DS_Store
+*.swp
+*~
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc

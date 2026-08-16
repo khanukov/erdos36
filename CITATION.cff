@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this preliminary certificate, cite the accompanying preprint."
+title: "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
+type: software
+version: 0.1.0-preprint
+date-released: 2026-08-16
+authors:
+  - family-names: Khanukov
+    given-names: Dmitry
+repository-code: "https://github.com/khanukov/erdos36"
+url: "https://github.com/khanukov/erdos36"
+license: MIT
+abstract: >-
+  Preliminary and unrefereed code and certificate for the proposed composite
+  lower bound c_E > 0.3805603. The central two bins are checked by a new
+  C/MPFR verifier; 170 outer bins rely on SHA-256-pinned upstream Arb reports.
+  No claim is Lean-verified or independently reproduced.
+preferred-citation:
+  type: generic
+  title: "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
+  authors:
+    - family-names: Khanukov
+      given-names: Dmitry
+  year: 2026
+  notes: "Preliminary, unrefereed preprint; no DOI has been assigned."
