@@ -1,0 +1,249 @@
+name: publish-priority-preprint
+
+on:
+  workflow_run:
+    workflows: [verify-priority-package]
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: publish-priority-preprint
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact verified main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: true
+
+      - name: Validate evidence, create tag, and publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          readonly version="$(tr -d '\r\n' < VERSION)"
+          if [[ "${version}" != "0.1.0-preprint" ]]; then
+            echo "unexpected release version: ${version}" >&2
+            exit 1
+          fi
+
+          readonly tag="v${version}"
+          readonly short="${VERIFIED_SHA:0:12}"
+          readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"
+          readonly archive="erdos36-${version}-${short}.zip"
+          readonly checksum="${archive}.sha256"
+          readonly pdf="erdos36-preprint-${version}.pdf"
+          readonly archive_root="erdos36-${version}-${short}"
+          readonly source_tree="$(git rev-parse 'HEAD^{tree}')"
+          readonly expected_run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}"
+          readonly assets_dir="${RUNNER_TEMP}/preprint-assets"
+          readonly actual_files="${RUNNER_TEMP}/actual-files.txt"
+          readonly expected_files="${RUNNER_TEMP}/expected-files.txt"
+          mkdir -p "${assets_dir}"
+
+          source_conclusion="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+              --jq .conclusion
+          )"
+          source_sha="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+              --jq .head_sha
+          )"
+          source_event="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+              --jq .event
+          )"
+          source_branch="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+              --jq .head_branch
+          )"
+          source_repository="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+              --jq .head_repository.full_name
+          )"
+          if [[ "${source_conclusion}" != "success" || \
+                "${source_sha}" != "${VERIFIED_SHA}" || \
+                "${source_event}" != "push" || \
+                "${source_branch}" != "main" || \
+                "${source_repository}" != "${GITHUB_REPOSITORY}" ]]; then
+            echo "source verification run is not a successful run for this main commit" >&2
+            exit 1
+          fi
+
+          current_main_sha="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/main" \
+              --jq .object.sha
+          )"
+          if [[ "${current_main_sha}" != "${VERIFIED_SHA}" ]]; then
+            echo "refusing to publish a stale main verification run" >&2
+            exit 1
+          fi
+
+          gh run download "${SOURCE_RUN_ID}" --repo "${GITHUB_REPOSITORY}" \
+            --name "${artifact}" --dir "${assets_dir}"
+
+          find "${assets_dir}" -maxdepth 1 -type f -printf '%f\n' | sort > "${actual_files}"
+          printf '%s\n' \
+            central_verification.128.json \
+            central_verification.128.log \
+            central_verification.128.rc \
+            central_verification.json \
+            central_verification.log \
+            central_verification.rc \
+            composite_verification.json \
+            "${archive}" \
+            "${checksum}" \
+            "${pdf}" \
+            outer_verification.json | sort > "${expected_files}"
+          diff -u "${expected_files}" "${actual_files}"
+
+          (
+            cd "${assets_dir}"
+            sha256sum -c "${checksum}"
+            unzip -tq "${archive}"
+            grep -Fqx '0' central_verification.rc
+            grep -Fqx '0' central_verification.128.rc
+          )
+          python3 scripts/verify_release.py "${assets_dir}/${archive}"
+
+          internal_pdf_sha="$(
+            unzip -p "${assets_dir}/${archive}" \
+              "${archive_root}/preprint.pdf" | sha256sum | awk '{print $1}'
+          )"
+          external_pdf_sha="$(sha256sum "${assets_dir}/${pdf}" | awk '{print $1}')"
+          if [[ "${internal_pdf_sha}" != "${external_pdf_sha}" ]]; then
+            echo "external PDF differs from the PDF inside the verified archive" >&2
+            exit 1
+          fi
+
+          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+            '.status == "PASS" and .source_commit == $sha and
+             .source_tree == $tree and .source_dirty == false and
+             .precision_bits == 96' \
+            "${assets_dir}/central_verification.json" >/dev/null
+          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+            '.status == "PASS" and .source_commit == $sha and
+             .source_tree == $tree and .source_dirty == false and
+             .precision_bits == 128' \
+            "${assets_dir}/central_verification.128.json" >/dev/null
+          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+            '.status == "PASS" and .source_commit == $sha and
+             .source_tree == $tree and .source_dirty == false' \
+            "${assets_dir}/composite_verification.json" >/dev/null
+          jq -e '.status == "PASS"' \
+            "${assets_dir}/outer_verification.json" >/dev/null
+
+          unzip -p "${assets_dir}/${archive}" \
+            "${archive_root}/COMMIT_SHA.txt" | grep -Fqx "${VERIFIED_SHA}"
+          unzip -p "${assets_dir}/${archive}" \
+            "${archive_root}/PROVENANCE.json" | \
+            jq -e \
+              --arg sha "${VERIFIED_SHA}" \
+              --arg tree "${source_tree}" \
+              --arg run_url "${expected_run_url}" \
+              '.commit == $sha and .tree == $tree and
+               .ci_run_url == $run_url and
+               .status == "preliminary-unrefereed-not-lean-verified"' >/dev/null
+
+          remote_tag_sha="$(
+            git ls-remote --tags origin "refs/tags/${tag}^{}" |
+              awk 'NR == 1 {print $1}'
+          )"
+          if [[ -z "${remote_tag_sha}" ]]; then
+            remote_tag_sha="$(
+              git ls-remote --tags origin "refs/tags/${tag}" |
+                awk 'NR == 1 {print $1}'
+            )"
+          fi
+          if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            if [[ -z "${remote_tag_sha}" ]]; then
+              echo "release ${tag} exists but its tag is missing" >&2
+              exit 1
+            fi
+            release_json="$(
+              gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" \
+                --json isDraft,isPrerelease,name,body,assets
+            )"
+            jq -e \
+              --arg title "${tag} — preliminary Parseval-prefix bound for Erdős Problem 36" \
+              '.isDraft == false and .isPrerelease == true and .name == $title' \
+              <<<"${release_json}" >/dev/null
+            grep -Fq "${remote_tag_sha}" <<<"$(jq -r .body <<<"${release_json}")"
+            expected_assets="$(
+              printf '%s\n' \
+                "GITHUB_RELEASE_SHA256SUMS.txt" \
+                "erdos36-${version}-${remote_tag_sha:0:12}.zip" \
+                "erdos36-${version}-${remote_tag_sha:0:12}.zip.sha256" \
+                "${pdf}" | sort
+            )"
+            actual_assets="$(jq -r '.assets[].name' <<<"${release_json}" | sort)"
+            if [[ "${actual_assets}" != "${expected_assets}" ]]; then
+              echo "existing release has an incomplete or unexpected asset set" >&2
+              exit 1
+            fi
+            echo "verified prerelease ${tag} already exists at ${remote_tag_sha}"
+            exit 0
+          fi
+
+          if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]; then
+            echo "refusing to move existing unpublished tag ${tag}: ${remote_tag_sha}" >&2
+            exit 1
+          fi
+
+          if [[ -z "${remote_tag_sha}" ]]; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git tag -a "${tag}" "${VERIFIED_SHA}" \
+              -m "Erdos 36 preliminary unrefereed preprint ${version}"
+            git push origin "refs/tags/${tag}"
+          fi
+
+          readonly release_manifest="${assets_dir}/GITHUB_RELEASE_SHA256SUMS.txt"
+          (
+            cd "${assets_dir}"
+            sha256sum "${archive}" "${checksum}" "${pdf}" > \
+              "$(basename "${release_manifest}")"
+          )
+          readonly archive_sha="$(sha256sum "${assets_dir}/${archive}" | awk '{print $1}')"
+          readonly pdf_sha="$(sha256sum "${assets_dir}/${pdf}" | awk '{print $1}')"
+          readonly notes="${RUNNER_TEMP}/RELEASE_NOTES.md"
+          sed \
+            -e "s/@VERIFIED_SHA@/${VERIFIED_SHA}/g" \
+            -e "s/@SOURCE_TREE@/${source_tree}/g" \
+            -e "s/@SOURCE_RUN_ID@/${SOURCE_RUN_ID}/g" \
+            -e "s/@ARCHIVE_NAME@/${archive}/g" \
+            -e "s/@ARCHIVE_SHA256@/${archive_sha}/g" \
+            -e "s/@PDF_NAME@/${pdf}/g" \
+            -e "s/@PDF_SHA256@/${pdf_sha}/g" \
+            release/RELEASE_NOTES.template.md > "${notes}"
+          if grep -q '@[A-Z0-9_]*@' "${notes}"; then
+            echo "unexpanded release-note token" >&2
+            exit 1
+          fi
+
+          gh release create "${tag}" \
+            "${assets_dir}/${archive}" \
+            "${assets_dir}/${checksum}" \
+            "${assets_dir}/${pdf}" \
+            "${release_manifest}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --verify-tag \
+            --prerelease \
+            --title "${tag} — preliminary Parseval-prefix bound for Erdős Problem 36" \
+            --notes-file "${notes}"

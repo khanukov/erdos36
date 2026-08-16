@@ -38,6 +38,8 @@ REQUIRED = {
     "docs/FORMALIZATION_STATUS.md",
     "docs/ERDOS_PROBLEMS_SUBMISSION.md",
     "docs/INDEPENDENT_REVIEW.md",
+    ".github/workflows/publish-preprint.yml",
+    "release/RELEASE_NOTES.template.md",
 }
 
 
@@ -62,14 +64,19 @@ title = "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
 zenodo = json.loads((ROOT / ".zenodo.json").read_text())
 zenodo_checks = {
     "title": zenodo.get("title") == title,
+    "version": zenodo.get("version") == version,
     "resource type": zenodo.get("upload_type") == "publication" and zenodo.get("publication_type") == "preprint",
     "date": zenodo.get("publication_date") == "2026-08-16",
     "creator": zenodo.get("creators") == [{"name": "Khanukov, Dmitry"}],
-    "license": zenodo.get("license") == "cc-by-4.0",
+    "mixed-scope license": zenodo.get("license") == "other-open",
 }
 for name, passed in zenodo_checks.items():
     if not passed:
         fail(f".zenodo.json mismatch: {name}")
+zenodo_notes = zenodo.get("notes", "")
+for expected in ("tagged source snapshot", "GitHub Release assets", "LICENSE_SCOPE.md"):
+    if expected not in zenodo_notes:
+        fail(f".zenodo.json notes missing trust-boundary text: {expected}")
 
 cff = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
 for expected in (
@@ -84,6 +91,8 @@ for expected in (
 ):
     if expected not in cff:
         fail(f"CITATION.cff missing expected metadata: {expected}")
+if "no DOI has been assigned" in cff:
+    fail("CITATION.cff would become false when Zenodo assigns the release DOI")
 
 paper = (
     (ROOT / "paper" / "main.tex").read_text(encoding="utf-8")
@@ -123,6 +132,43 @@ if "https://github.com/khanukov/erdos36" not in text:
     fail("canonical repository URL missing")
 if not re.search(r"[Pp]reliminary", text) or not re.search(r"[Uu]nrefereed", text):
     fail("preliminary/unrefereed disclosure missing")
+
+paper_license = (ROOT / "paper" / "LICENSE").read_text(encoding="utf-8")
+for expected in (title, "https://github.com/khanukov/erdos36"):
+    if expected not in paper_license:
+        fail(f"paper license missing correct attribution metadata: {expected}")
+if "erdos302" in paper_license.lower():
+    fail("paper license still refers to Erdős Problem 302")
+
+publish_workflow = (ROOT / ".github" / "workflows" / "publish-preprint.yml").read_text(
+    encoding="utf-8"
+)
+for expected in (
+    "workflow_run:",
+    "workflows: [verify-priority-package]",
+    "head_repository.full_name == github.repository",
+    'python3 scripts/verify_release.py "${assets_dir}/${archive}"',
+    '.ci_run_url == $run_url',
+    "refusing to publish a stale main verification run",
+    "--prerelease",
+    'readonly tag="v${version}"',
+    'readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"',
+):
+    if expected not in publish_workflow:
+        fail(f"publish workflow missing fail-closed release rule: {expected}")
+
+release_notes = (ROOT / "release" / "RELEASE_NOTES.template.md").read_text(
+    encoding="utf-8"
+)
+for token in (
+    "@VERIFIED_SHA@",
+    "@SOURCE_TREE@",
+    "@SOURCE_RUN_ID@",
+    "@ARCHIVE_SHA256@",
+    "@PDF_SHA256@",
+):
+    if token not in release_notes:
+        fail(f"release-note template missing provenance token: {token}")
 
 lean_files = list(ROOT.rglob("*.lean"))
 if lean_files and status.get("lean_checked_claims") == []:

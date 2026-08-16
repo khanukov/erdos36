@@ -1,9 +1,11 @@
 {
   "title": "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem",
+  "version": "0.1.0-preprint",
   "upload_type": "publication",
   "publication_type": "preprint",
   "publication_date": "2026-08-16",
   "description": "Preliminary and unrefereed computer-assisted certificate supporting the proposed composite lower bound c_E > 0.3805603. The new central two-bin computation is checked with directed-rounding MPFR; the remaining 170 bins use SHA-256-pinned reports from Price's upstream Arb computation. This is not a solution of Erdős Problem 36, has not been independently reproduced, and is not Lean-verified.",
+  "notes": "Created automatically from the GitHub prerelease. This Zenodo record contains the tagged source snapshot; the compiled PDF, deterministic release bundle, checksums, and generated verification evidence are GitHub Release assets. Original repository material outside paper/ is MIT-licensed, while original manuscript material under paper/ is CC BY 4.0; see LICENSE_SCOPE.md.",
   "creators": [
     {
       "name": "Khanukov, Dmitry"
@@ -16,7 +18,7 @@
     "computer-assisted proof",
     "interval arithmetic"
   ],
-  "license": "cc-by-4.0",
+  "license": "other-open",
   "access_right": "open",
   "related_identifiers": [
     {
