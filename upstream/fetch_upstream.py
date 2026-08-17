@@ -5,13 +5,14 @@ import base64
 import hashlib
 import json
 import os
-import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from pinned_manifest import load_expected_manifest, unexpected_cache_entries
 
 COMMIT = "6bc610e40083ef61a40966dfb5d38612cabc4c5b"
 OWNER = "Leeham06972452"
@@ -21,22 +22,12 @@ API_BASE = f"https://api.github.com/repos/{OWNER}/{REPO}/contents/certificate/"
 ROOT = Path(__file__).resolve().parent
 CACHE = ROOT / "cache"
 SHA_FILE = ROOT / "SHA256SUMS.txt"
+VERSION = (ROOT.parent / "VERSION").read_text(encoding="utf-8").strip()
 TOKEN = os.environ.get("GITHUB_TOKEN")
 
 
 def load_expected() -> dict[str, str]:
-    result: dict[str, str] = {}
-    for line in SHA_FILE.read_text().splitlines():
-        if not line.strip():
-            continue
-        digest, name = line.split(maxsplit=1)
-        name = name.strip()
-        if name in result:
-            raise ValueError(f"duplicate upstream hash path: {name}")
-        if Path(name).name != name or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
-            raise ValueError(f"unsafe name or invalid SHA-256: {name}")
-        result[name] = digest
-    return result
+    return load_expected_manifest(SHA_FILE)
 
 
 def sha256(path: Path) -> str:
@@ -48,7 +39,7 @@ def sha256(path: Path) -> str:
 
 
 def request(url: str, *, accept: str | None = None, timeout: int = 35) -> bytes:
-    headers = {"User-Agent": "erdos36-parseval-prefix/0.1.0-preprint"}
+    headers = {"User-Agent": f"erdos36-parseval-prefix/{VERSION}"}
     if accept:
         headers["Accept"] = accept
     if TOKEN:
@@ -86,6 +77,9 @@ def main() -> int:
     CACHE.mkdir(parents=True, exist_ok=True)
     expected = load_expected()
     failures: list[str] = []
+    extras = unexpected_cache_entries(CACHE, expected)
+    if extras:
+        failures.append("unexpected cache entries: " + ", ".join(extras))
     for name, digest in expected.items():
         target = CACHE / name
         if not target.exists() or sha256(target) != digest:

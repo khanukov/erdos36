@@ -11,9 +11,16 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import uuid
 from decimal import Decimal, getcontext
 from pathlib import Path
+
+from pinned_manifest import (
+    load_expected_manifest,
+    unexpected_cache_entries,
+    valid_cover_boundary,
+)
 
 getcontext().prec = 100
 ROOT = Path(__file__).resolve().parent
@@ -33,17 +40,22 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def git(*args: str) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", *args], cwd=ROOT.parent, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SystemExit("FAIL: source-bound verification requires a Git checkout") from exc
+
+
 def verify_cache() -> int:
-    expected: dict[str, str] = {}
-    for line in (ROOT / "SHA256SUMS.txt").read_text().splitlines():
-        if line.strip():
-            digest, name = line.split(maxsplit=1)
-            name = name.strip()
-            require(name not in expected, f"duplicate upstream hash path {name}")
-            require(Path(name).name == name, f"unsafe upstream hash path {name}")
-            require(re.fullmatch(r"[0-9a-f]{64}", digest) is not None, f"bad SHA-256 for {name}")
-            expected[name] = digest
-    require(bool(expected), "empty upstream hash manifest")
+    try:
+        expected = load_expected_manifest(ROOT / "SHA256SUMS.txt")
+    except ValueError as exc:
+        raise SystemExit(f"FAIL: {exc}") from exc
+    extras = unexpected_cache_entries(CACHE, expected)
+    require(not extras, "unexpected cache entries: " + ", ".join(extras))
     for name, digest in expected.items():
         path = CACHE / name
         require(path.is_file(), f"missing pinned input {name}")
@@ -83,13 +95,18 @@ def main() -> int:
     hi_values = [Decimal(row["hi"]) for row in rows]
     require(lo_values[0] == Decimal("-1") and hi_values[-1] == Decimal("1"), "bin cover must span [-1,1]")
     require(all(lo <= hi for lo, hi in zip(lo_values, hi_values)), "reversed bin interval")
-    # The CSV was emitted through binary64 at one boundary; tolerate only its
-    # observed sub-ulp decimal rendering difference, never a material gap.
-    coverage_tolerance = Decimal("1e-15")
-    require(
-        all(abs(hi_values[index] - lo_values[index + 1]) <= coverage_tolerance for index in range(171)),
-        "material gap or overlap in reported bin cover",
-    )
+    # The CSV was emitted through binary64 at one boundary.  Permit only a
+    # tiny overlap; a positive gap of any size leaves the domain uncovered.
+    for index in range(171):
+        overlap = hi_values[index] - lo_values[index + 1]
+        require(
+            valid_cover_boundary(hi_values[index], lo_values[index + 1]),
+            (
+                f"gap between bins {index} and {index + 1}"
+                if overlap < 0
+                else f"material overlap between bins {index} and {index + 1}"
+            ),
+        )
     require(
         (lo_values[85], hi_values[85], lo_values[86], hi_values[86])
         == (Decimal("-0.003125"), Decimal("0"), Decimal("0"), Decimal("0.003125")),
@@ -123,6 +140,9 @@ def main() -> int:
         "threshold": str(threshold),
         "margin": str(margin),
         "pinned_commit": COMMIT,
+        "source_commit": git("rev-parse", "HEAD"),
+        "source_tree": git("rev-parse", "HEAD^{tree}"),
+        "source_dirty": bool(git("status", "--porcelain=v1", "--untracked-files=all")),
     }
     out = ROOT.parent / "build" / "outer_verification.json"
     out.parent.mkdir(exist_ok=True)

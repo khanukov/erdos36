@@ -25,11 +25,17 @@ REQUIRED = {
     "verifier/run_central_check.sh",
     "upstream/fetch_upstream.py",
     "upstream/verify_outer_bins.py",
+    "upstream/pinned_manifest.py",
+    "upstream/test_pinned_inputs.py",
     "upstream/SHA256SUMS.txt",
     "scripts/verify_all.sh",
     "scripts/verify_composite.py",
+    "scripts/build_arxiv.py",
     "scripts/build_release.py",
     "scripts/verify_release.py",
+    "scripts/release_evidence.py",
+    "scripts/test_release_mutations.py",
+    "scripts/test_parse_central_log.py",
     "paper/main.tex",
     "paper/references.bib",
     "paper/LICENSE",
@@ -57,7 +63,7 @@ for forbidden in ("zenodo.template.json", "paper/main.pdf"):
         fail(f"generated or placeholder file present: {forbidden}")
 
 version = (ROOT / "VERSION").read_text().strip()
-if version != "0.1.0-preprint":
+if version != "0.1.1-preprint":
     fail(f"unexpected VERSION: {version}")
 
 title = "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
@@ -66,7 +72,7 @@ zenodo_checks = {
     "title": zenodo.get("title") == title,
     "version": zenodo.get("version") == version,
     "resource type": zenodo.get("upload_type") == "publication" and zenodo.get("publication_type") == "preprint",
-    "date": zenodo.get("publication_date") == "2026-08-16",
+    "date": zenodo.get("publication_date") == "2026-08-17",
     "creator": zenodo.get("creators") == [{"name": "Khanukov, Dmitry"}],
     "mixed-scope license": zenodo.get("license") == "other-open",
 }
@@ -83,7 +89,7 @@ for expected in (
     "cff-version: 1.2.0",
     f'title: "{title}"',
     f"version: {version}",
-    "date-released: 2026-08-16",
+    "date-released: 2026-08-17",
     'repository-code: "https://github.com/khanukov/erdos36"',
     "license: MIT",
     "family-names: Khanukov",
@@ -101,8 +107,8 @@ paper = (
 )
 for expected in (
     r"\author{Dmitry Khanukov}",
-    r"\date{August 16, 2026}",
-    r"\textbf{Status: Preliminary and unrefereed.}",
+    r"\date{August 17, 2026}",
+    "Status: Preliminary and unrefereed.",
     "not Lean-verified",
     r"\url{https://github.com/khanukov/erdos36}",
 ):
@@ -153,6 +159,7 @@ for expected in (
     "--prerelease",
     'readonly tag="v${version}"',
     'readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"',
+    '${tag} — hardened preliminary Parseval-prefix bound for Erdős Problem 36',
 ):
     if expected not in publish_workflow:
         fail(f"publish workflow missing fail-closed release rule: {expected}")

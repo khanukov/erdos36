@@ -9,11 +9,16 @@ can therefore create the tag and public GitHub prerelease. Do not merge or
 manually dispatch publication work until the author has authorized publication
 and the Zenodo GitHub integration is enabled for this repository.
 
-The intended first public version is `0.1.0-preprint`, with tag
-`v0.1.0-preprint`. It must be described as preliminary, unrefereed, not a
-solution of Erdős Problem 36, not independently reproduced, and not
-Lean-verified unless the underlying facts change before release and are
-documented in the same commit.
+The first public version, `v0.1.0-preprint`, is preserved at exact commit
+[`e11e4bfd2575494c44d5c66542b8f5f27d64c400`](https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400),
+[GitHub release](https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint),
+and Zenodo version DOI
+[`10.5281/zenodo.21969299`](https://doi.org/10.5281/zenodo.21969299). It must
+not be retagged or rewritten. The intended corrective version is
+`0.1.1-preprint`, with tag `v0.1.1-preprint`. It must be described as
+preliminary, unrefereed, not a solution of Erdős Problem 36, not independently
+reproduced, and not Lean-verified unless the underlying facts change before
+release and are documented in the same commit.
 
 ## Release gates
 
@@ -52,14 +57,11 @@ Run from the exact clean commit:
 
 ```bash
 git status --short
-make verify
-make verify-central-128
-make paper
-python3 scripts/build_release.py
-python3 scripts/verify_release.py
+make release-candidate
 ```
 
 `git status --short` must print nothing before the build. The release builder
+uses one shared verification run identifier for all four evidence objects and
 prints the ZIP path and SHA-256 digest. Verify the companion checksum from the
 `build/` directory and test the archive before upload. Preserve the CI run URL
 and the exact commit and tree identifiers in the release record.
@@ -84,12 +86,12 @@ exact successful `main` verification run. It refuses to move an existing tag,
 checks the downloaded Actions artifact and its embedded provenance again, and
 uses:
 
-- tag: `v0.1.0-preprint`;
-- title: `v0.1.0-preprint — preliminary Parseval-prefix bound for Erdős Problem 36`;
+- tag: `v0.1.1-preprint`;
+- title: `v0.1.1-preprint — hardened preliminary Parseval-prefix bound for Erdős Problem 36`;
 - status: public, non-draft GitHub prerelease;
 - classification: preliminary priority preprint, not an accepted result;
 - assets: the release ZIP, its companion `.sha256` file, and
-  `build/erdos36-preprint-0.1.0-preprint.pdf`, plus an external
+  `build/erdos36-preprint-0.1.1-preprint.pdf`, plus an external
   `GITHUB_RELEASE_SHA256SUMS.txt` manifest.
 
 The release body should say:
@@ -98,7 +100,9 @@ The release body should say:
 > bound \(c_E>0.3805603\) for Erdős Problem 36. It does not solve the problem.
 >
 > The new contribution replaces central bins 85 and 86 with a finite
-> Parseval-prefix certificate checked by a directed-rounding C/MPFR verifier.
+> profile-space Parseval-prefix certificate checked by a directed-rounding
+> C/MPFR verifier. Parseval energy constraints themselves are prior work in
+> White's framework.
 > The other 170 bins are validated from SHA-256-pinned reports at Price commit
 > `6bc610e40083ef61a40966dfb5d38612cabc4c5b`; their Arb computation is not
 > rerun by this repository.
@@ -107,6 +111,9 @@ The release body should say:
 > scope, generated evidence, and internal and external SHA-256 manifests. The
 > new central result has not been independently reproduced or peer reviewed,
 > and no claim in this repository is Lean-verified.
+>
+> Zenodo concept DOI: `10.5281/zenodo.21969298`. Historical
+> `v0.1.0-preprint` version DOI: `10.5281/zenodo.21969299`.
 
 Do not mark the release as an accepted solution. If GitHub release immutability
 is available for the repository, enable it before publishing; otherwise
@@ -115,12 +122,13 @@ as the public identity record.
 
 ## Automatic GitHub-to-Zenodo workflow
 
-Use the Zenodo GitHub integration for the first archival timestamp. Before the
-publishing commit reaches `main`, sign in to Zenodo through GitHub, synchronize
-the repository list, and enable `khanukov/erdos36`. The successful `main` CI
-then triggers `publish-priority-preprint`, which creates the annotated tag and
-GitHub prerelease. The enabled Zenodo integration receives that release event
-and archives the tagged repository snapshot.
+Keep the existing Zenodo GitHub integration enabled so that
+`v0.1.1-preprint` is deposited as a new version under concept DOI
+[`10.5281/zenodo.21969298`](https://doi.org/10.5281/zenodo.21969298), not as an
+unrelated record. The successful `main` CI triggers
+`publish-priority-preprint`, which creates the annotated tag and GitHub
+prerelease. The enabled Zenodo integration receives that release event and
+archives the tagged repository snapshot.
 
 Official setup references: [link the GitHub account][zenodo-link], choose
 `Sync now` and [enable the repository][zenodo-enable], then follow Zenodo's
@@ -130,17 +138,17 @@ The automatic Zenodo record contains GitHub's source snapshot, not the custom
 GitHub Release assets. Consequently every load-bearing source file,
 certificate, verifier, upstream retrieval rule and hash, license, and metadata
 file must be in the tagged tree. The pinned upstream reports themselves remain
-runtime downloads and are not vendored. The deterministic release ZIP,
+runtime downloads and are not vendored. The normalized, allowlisted release ZIP,
 generated verification evidence, compiled PDF, and their external manifest
 remain attached to the GitHub prerelease and are linked by its exact commit and
 Actions run.
 
-The GitHub integration does not support reserving the first version DOI in
-advance. After Zenodo finishes processing, record the version DOI and concept
-DOI, inspect the title, author, description, version, licenses, related links,
-and archived source snapshot, and verify that they match `.zenodo.json` and the
-tag. Add the DOI to `CITATION.cff`, the manuscript, and repository badges only
-in a later commit/version; never rewrite the published priority tag.
+The concept DOI is already known, but the `v0.1.1-preprint` version DOI must not
+be guessed or reserved in source. After Zenodo finishes processing, record the
+assigned new version DOI, inspect the title, author, description, version,
+licenses, related links, and archived source snapshot, and verify that they
+match `.zenodo.json` and the tag. Add the new version DOI only in a later
+metadata commit/version; never rewrite either published priority tag.
 
 If the Zenodo record does not appear, preserve the existing tag and prerelease,
 diagnose the integration, and do not silently recreate or retag the release.

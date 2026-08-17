@@ -1,11 +1,11 @@
 {
   "title": "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem",
-  "version": "0.1.0-preprint",
+  "version": "0.1.1-preprint",
   "upload_type": "publication",
   "publication_type": "preprint",
-  "publication_date": "2026-08-16",
-  "description": "Preliminary and unrefereed computer-assisted certificate supporting the proposed composite lower bound c_E > 0.3805603. The new central two-bin computation is checked with directed-rounding MPFR; the remaining 170 bins use SHA-256-pinned reports from Price's upstream Arb computation. This is not a solution of Erdős Problem 36, has not been independently reproduced, and is not Lean-verified.",
-  "notes": "Created automatically from the GitHub prerelease. This Zenodo record contains the tagged source snapshot; the compiled PDF, deterministic release bundle, checksums, and generated verification evidence are GitHub Release assets. Original repository material outside paper/ is MIT-licensed, while original manuscript material under paper/ is CC BY 4.0; see LICENSE_SCOPE.md.",
+  "publication_date": "2026-08-17",
+  "description": "Preliminary and unrefereed computer-assisted certificate supporting the proposed composite lower bound c_E > 0.3805603. Parseval energy constraints are prior work; the contribution claimed here is their finite profile-space prefix projection, its use in the two binding central bins, and directed-rounding MPFR verification. The remaining 170 bins use SHA-256-pinned reports from Price's upstream Arb computation. This is not a solution of Erdős Problem 36, has not been independently reproduced, and is not Lean-verified.",
+  "notes": "The stable concept DOI for all versions is 10.5281/zenodo.21969298; historical v0.1.0-preprint has version DOI 10.5281/zenodo.21969299. No version DOI is asserted for v0.1.1-preprint until Zenodo assigns it. Created automatically from the GitHub prerelease. This Zenodo record contains the tagged source snapshot; the compiled PDF, normalized allowlisted release bundle, checksums, and generated verification evidence are GitHub Release assets. The release ZIP records its exact bytes by checksum but is not claimed to rebuild byte-for-byte because generated evidence contains a run UUID and PDF bytes can depend on the TeX toolchain. Original repository material outside paper/ is MIT-licensed, while original manuscript material under paper/ is CC BY 4.0; see LICENSE_SCOPE.md.",
   "creators": [
     {
       "name": "Khanukov, Dmitry"
@@ -22,8 +22,32 @@
   "access_right": "open",
   "related_identifiers": [
     {
+      "identifier": "10.5281/zenodo.21969298",
+      "relation": "isVersionOf",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    },
+    {
+      "identifier": "10.5281/zenodo.21969299",
+      "relation": "isNewVersionOf",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    },
+    {
       "identifier": "https://github.com/khanukov/erdos36",
       "relation": "isSupplementedBy",
+      "scheme": "url",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint",
+      "relation": "isNewVersionOf",
+      "scheme": "url",
+      "resource_type": "publication-preprint"
+    },
+    {
+      "identifier": "https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400",
+      "relation": "references",
       "scheme": "url",
       "resource_type": "software"
     },

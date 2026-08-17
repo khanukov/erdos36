@@ -4,8 +4,15 @@ This **preliminary, unrefereed** priority release records the proposed
 composite lower bound \(c_E>0.3805603\) for Erdős Problem 36. It does not solve
 the problem.
 
-The new contribution replaces central bins 85 and 86 with a finite
-Parseval-prefix certificate checked by a directed-rounding C/MPFR verifier.
+This corrective release leaves `v0.1.0-preprint` unchanged. It closes the
+nested upstream checksum manifest, rejects positive bin-cover gaps, records
+the MPFR/GMP runtime versions, and requires the 96-bit, 128-bit, outer, and
+composite evidence to share one source-bound verification run identifier.
+
+White already used the underlying Parseval energy budget. The claimed new
+contribution is its finite profile-space prefix projection and the replacement
+of central bins 85 and 86 by a certificate checked with directed-rounding
+C/MPFR arithmetic.
 The other 170 bins are validated from SHA-256-pinned reports at Price commit
 `6bc610e40083ef61a40966dfb5d38612cabc4c5b`; this repository does not rerun
 their Arb computation.

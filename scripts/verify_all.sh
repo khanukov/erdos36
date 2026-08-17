@@ -3,7 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-export VERIFICATION_RUN_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "FAIL: source-bound verification requires a Git checkout" >&2
+  exit 1
+fi
+export VERIFICATION_RUN_ID="${VERIFICATION_RUN_ID:-$(python3 -c 'import uuid; print(uuid.uuid4())')}"
 export PYTHONDONTWRITEBYTECODE=1
 
 echo "verification_run_id=$VERIFICATION_RUN_ID"

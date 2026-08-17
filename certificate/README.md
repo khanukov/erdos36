@@ -5,8 +5,8 @@ rows used on the symmetric central-bin pair. The C verifier embeds the same
 constants for speed. Before every run, `verifier/check_embedding.py` checks the
 target, central bin, row schema and order, row counts, every frequency, bound,
 and multiplier, the fixed `cos_pi` and Parseval bounds, and the C size
-constants. `verifier/test_embedding_mutations.py` confirms that eleven representative
-load-bearing mutations are rejected.
+constants. `verifier/test_embedding_mutations.py` runs a negative mutation
+suite covering representative load-bearing and explanatory fields.
 
 Row counts:
 

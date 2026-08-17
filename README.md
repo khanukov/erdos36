@@ -1,14 +1,19 @@
 # A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem
 
-> **Preliminary and unrefereed — v0.1.0-preprint (2026-08-16).**
+> **Preliminary and unrefereed — v0.1.1-preprint (2026-08-17).**
 > This repository records a priority claim for the computer-assisted bound
 > \(c_E>0.3805603\). It is not a solution of Erdős Problem 36, has not been
 > independently reproduced, and is not Lean-verified.
 
+[![Zenodo concept DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21969298.svg)](https://doi.org/10.5281/zenodo.21969298)
+
 This repository contains the manuscript, certificate, and verifier for a
 proposed improvement of the lower bound in the minimum-overlap problem.  The
-new ingredient is a finite Parseval-prefix inequality used in the two central
-mean bins.  The numerical improvement over the pinned Price bound is
+Parseval energy constraint was already used by White; the new contribution
+claimed here is its finite profile-space prefix projection, its use in the two
+binding central mean bins of Price's compact certificate, and the corresponding
+directed-rounding verification.  The numerical improvement over the strongest
+public computer-certified claim used as the comparison point is
 
 \[
 0.3805603-0.380554702762594012\ldots
@@ -31,6 +36,10 @@ The exact upstream revision is
 The outer-bin step accepts the upstream reports as inputs; it is not an
 independent reproduction of their Arb computation.  See
 [`docs/TRUST_BOUNDARY.md`](docs/TRUST_BOUNDARY.md).
+
+Price's candidate is a public, independently rerun computer-certified claim;
+neither it nor this proposed improvement is described here as an officially
+recorded or accepted lower-bound record for Erdős Problem 36.
 
 ## Reproduce the checked claim
 
@@ -79,6 +88,15 @@ on the pinned outer-bin reports.  A Git commit, release, or Zenodo DOI provides
 a public timestamp; it does not constitute review or acceptance by the Erdős
 Problems project.  The requested review scope is stated in
 [`docs/INDEPENDENT_REVIEW.md`](docs/INDEPENDENT_REVIEW.md).
+
+The Zenodo concept DOI for all archived versions is
+[`10.5281/zenodo.21969298`](https://doi.org/10.5281/zenodo.21969298). The
+historical `v0.1.0-preprint` priority snapshot has version DOI
+[`10.5281/zenodo.21969299`](https://doi.org/10.5281/zenodo.21969299) and is
+tied to [GitHub release `v0.1.0-preprint`](https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint)
+and exact source commit
+[`e11e4bfd2575494c44d5c66542b8f5f27d64c400`](https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400).
+No version DOI is claimed for `v0.1.1-preprint` until Zenodo assigns it.
 
 ## Authorship, AI assistance, and licenses
 

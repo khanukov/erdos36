@@ -3,8 +3,11 @@ PYTHON ?= python3
 .PHONY: check verify-central verify-central-128 fetch-upstream verify-outer verify-composite verify paper arxiv checksums release-candidate
 
 check:
-	$(PYTHON) scripts/check_repo.py
-	$(PYTHON) scripts/verify_checksums.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/test_parse_central_log.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) upstream/test_pinned_inputs.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/test_release_mutations.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/check_repo.py
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/verify_checksums.py
 
 verify-central:
 	bash verifier/run_central_check.sh
@@ -33,6 +36,7 @@ arxiv: paper
 checksums:
 	$(PYTHON) scripts/update_checksums.py
 
-release-candidate: verify paper
+release-candidate: export VERIFICATION_RUN_ID := $(shell $(PYTHON) -c 'import uuid; print(uuid.uuid4())')
+release-candidate: verify verify-central-128 paper
 	$(PYTHON) scripts/build_release.py
 	$(PYTHON) scripts/verify_release.py

@@ -21,22 +21,18 @@ export CENTRAL_PRECISION_BITS="$PRECISION"
 python3 verifier/check_embedding.py certificate/central_certificate.json verifier/verify_central_mpfr.c
 python3 verifier/test_embedding_mutations.py
 
-if ldconfig -p 2>/dev/null | grep -q 'libmpfr.so.6'; then
-  MPFR_LINK='-Wl,-l:libmpfr.so.6'
-else
-  MPFR_LINK='-lmpfr'
-fi
-if ldconfig -p 2>/dev/null | grep -q 'libgmp.so.10'; then
-  GMP_LINK='-Wl,-l:libgmp.so.10'
-else
-  GMP_LINK='-lgmp'
+MPFR_CFLAGS=()
+MPFR_LIBS=(-lmpfr -lgmp)
+if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists mpfr gmp; then
+  read -r -a MPFR_CFLAGS <<< "$(pkg-config --cflags mpfr gmp)"
+  read -r -a MPFR_LIBS <<< "$(pkg-config --libs mpfr gmp)"
 fi
 
 BINARY="build/verify_central_mpfr${SUFFIX}"
 STEM="build/central_verification${SUFFIX}"
 ${CC:-gcc} -std=c11 -O3 -Wall -Wextra -Wpedantic -Werror \
-  -DPREC="$PRECISION" verifier/verify_central_mpfr.c \
-  "$MPFR_LINK" "$GMP_LINK" -lm -o "$BINARY"
+  "${MPFR_CFLAGS[@]}" -DPREC="$PRECISION" verifier/verify_central_mpfr.c \
+  "${MPFR_LIBS[@]}" -lm -o "$BINARY"
 
 set +e
 "$BINARY" "${1:-7}" | tee "${STEM}.log"
