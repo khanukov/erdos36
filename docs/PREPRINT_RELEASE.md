@@ -87,7 +87,8 @@ checks the downloaded Actions artifact and its embedded provenance again, and
 uses:
 
 - tag: `v0.1.1-preprint`;
-- title: `v0.1.1-preprint — hardened preliminary Parseval-prefix bound for Erdős Problem 36`;
+- title: the tag, an em dash, and the single-line suffix pinned in
+  `release/RELEASE_TITLE.txt`;
 - status: public, non-draft GitHub prerelease;
 - classification: preliminary priority preprint, not an accepted result;
 - assets: the release ZIP, its companion `.sha256` file, and
@@ -147,8 +148,14 @@ The concept DOI is already known, but the `v0.1.1-preprint` version DOI must not
 be guessed or reserved in source. After Zenodo finishes processing, record the
 assigned new version DOI, inspect the title, author, description, version,
 licenses, related links, and archived source snapshot, and verify that they
-match `.zenodo.json` and the tag. Add the new version DOI only in a later
-metadata commit/version; never rewrite either published priority tag.
+match `.zenodo.json` and the tag. The tagged `v0.1.1-preprint` snapshot keeps
+`current_version_doi: null` permanently because its version DOI does not exist
+until after that immutable snapshot is deposited. In the next source version
+(for example, `0.1.2-preprint` or a later substantive release), record the
+assigned DOI as `historical_v0.1.1_version_doi` and in the accompanying citation
+notes; do not mislabel it as the next version's `current_version_doi`. Never
+make a post-deposit metadata commit that still claims to be the tagged
+`0.1.1-preprint`, and never rewrite either published priority tag.
 
 If the Zenodo record does not appear, preserve the existing tag and prerelease,
 diagnose the integration, and do not silently recreate or retag the release.

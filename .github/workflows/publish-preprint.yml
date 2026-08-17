@@ -37,13 +37,16 @@ jobs:
         run: |
           set -euo pipefail
 
+          readonly intended_version="0.1.1-preprint"
           readonly version="$(tr -d '\r\n' < VERSION)"
-          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-preprint$ ]]; then
-            echo "invalid preprint VERSION: ${version}" >&2
+          if [[ "${version}" != "${intended_version}" ]]; then
+            echo "release intent mismatch: expected ${intended_version}, got ${version}" >&2
             exit 1
           fi
 
           readonly tag="v${version}"
+          readonly release_title_suffix="$(tr -d '\r\n' < release/RELEASE_TITLE.txt)"
+          readonly release_title="${tag} — ${release_title_suffix}"
           readonly short="${VERIFIED_SHA:0:12}"
           readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"
           readonly archive="erdos36-${version}-${short}.zip"
@@ -249,7 +252,7 @@ jobs:
                 --json isDraft,isPrerelease,name,body,assets
             )"
             jq -e \
-              --arg title "${tag} — hardened preliminary Parseval-prefix bound for Erdős Problem 36" \
+              --arg title "${release_title}" \
               '.isDraft == false and .isPrerelease == true and .name == $title' \
               <<<"${release_json}" >/dev/null
             grep -Fq "${remote_tag_sha}" <<<"$(jq -r .body <<<"${release_json}")"
@@ -313,5 +316,5 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --verify-tag \
             --prerelease \
-            --title "${tag} — hardened preliminary Parseval-prefix bound for Erdős Problem 36" \
+            --title "${release_title}" \
             --notes-file "${notes}"

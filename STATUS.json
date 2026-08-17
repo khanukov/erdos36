@@ -30,6 +30,7 @@
   "archival_record": {
     "concept_doi": "10.5281/zenodo.21969298",
     "current_version_doi": null,
+    "current_version_doi_policy": "assigned after deposit; record as historical_v0.1.1_version_doi in the next source version; never rewrite a published tag",
     "historical_v0.1.0_version_doi": "10.5281/zenodo.21969299",
     "historical_v0.1.0_release": "https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint",
     "historical_v0.1.0_commit": "e11e4bfd2575494c44d5c66542b8f5f27d64c400"

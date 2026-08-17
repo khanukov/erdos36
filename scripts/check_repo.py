@@ -46,6 +46,7 @@ REQUIRED = {
     "docs/INDEPENDENT_REVIEW.md",
     ".github/workflows/publish-preprint.yml",
     "release/RELEASE_NOTES.template.md",
+    "release/RELEASE_TITLE.txt",
 }
 
 
@@ -124,10 +125,22 @@ checks = {
     "review status": status.get("peer_reviewed") is False,
     "problem status": status.get("solves_erdos_problem_36") is False,
     "upstream pin": status.get("outer", {}).get("source_commit") == "6bc610e40083ef61a40966dfb5d38612cabc4c5b",
+    "version DOI pending": status.get("archival_record", {}).get("current_version_doi") is None,
+    "version DOI policy": status.get("archival_record", {}).get("current_version_doi_policy")
+    == "assigned after deposit; record as historical_v0.1.1_version_doi in the next source version; never rewrite a published tag",
 }
 for name, passed in checks.items():
     if not passed:
         fail(f"STATUS.json mismatch: {name}")
+
+release_title_suffix = (ROOT / "release" / "RELEASE_TITLE.txt").read_text(encoding="utf-8")
+if (
+    release_title_suffix != release_title_suffix.strip() + "\n"
+    or "\n" in release_title_suffix.rstrip("\n")
+    or "preliminary" not in release_title_suffix.lower()
+    or "Erdős Problem 36" not in release_title_suffix
+):
+    fail("release title must be one disclosure-bearing newline-terminated line")
 
 critical = ["README.md", "RESULT.md", "CITATION.cff", ".zenodo.json", "paper/main.tex"]
 text = "\n".join((ROOT / name).read_text(encoding="utf-8") for name in critical)
@@ -157,9 +170,12 @@ for expected in (
     '.ci_run_url == $run_url',
     "refusing to publish a stale main verification run",
     "--prerelease",
+    f'readonly intended_version="{version}"',
+    'if [[ "${version}" != "${intended_version}" ]]',
     'readonly tag="v${version}"',
+    'readonly release_title_suffix="$(tr -d \'\\r\\n\' < release/RELEASE_TITLE.txt)"',
+    'readonly release_title="${tag} — ${release_title_suffix}"',
     'readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"',
-    '${tag} — hardened preliminary Parseval-prefix bound for Erdős Problem 36',
 ):
     if expected not in publish_workflow:
         fail(f"publish workflow missing fail-closed release rule: {expected}")
