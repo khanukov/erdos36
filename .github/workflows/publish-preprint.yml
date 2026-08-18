@@ -37,13 +37,16 @@ jobs:
         run: |
           set -euo pipefail
 
+          readonly intended_version="0.1.1-preprint"
           readonly version="$(tr -d '\r\n' < VERSION)"
-          if [[ "${version}" != "0.1.0-preprint" ]]; then
-            echo "unexpected release version: ${version}" >&2
+          if [[ "${version}" != "${intended_version}" ]]; then
+            echo "release intent mismatch: expected ${intended_version}, got ${version}" >&2
             exit 1
           fi
 
           readonly tag="v${version}"
+          readonly release_title_suffix="$(tr -d '\r\n' < release/RELEASE_TITLE.txt)"
+          readonly release_title="${tag} — ${release_title_suffix}"
           readonly short="${VERIFIED_SHA:0:12}"
           readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"
           readonly archive="erdos36-${version}-${short}.zip"
@@ -86,14 +89,18 @@ jobs:
             exit 1
           fi
 
-          current_main_sha="$(
-            gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/main" \
-              --jq .object.sha
-          )"
-          if [[ "${current_main_sha}" != "${VERIFIED_SHA}" ]]; then
-            echo "refusing to publish a stale main verification run" >&2
-            exit 1
-          fi
+          require_current_main() {
+            local current_main_sha
+            current_main_sha="$(
+              gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/main" \
+                --jq .object.sha
+            )"
+            if [[ "${current_main_sha}" != "${VERIFIED_SHA}" ]]; then
+              echo "refusing to publish a stale main verification run" >&2
+              exit 1
+            fi
+          }
+          require_current_main
 
           gh run download "${SOURCE_RUN_ID}" --repo "${GITHUB_REPOSITORY}" \
             --name "${artifact}" --dir "${assets_dir}"
@@ -122,6 +129,20 @@ jobs:
           )
           python3 scripts/verify_release.py "${assets_dir}/${archive}"
 
+          for evidence in \
+            central_verification.json \
+            central_verification.log \
+            central_verification.rc \
+            central_verification.128.json \
+            central_verification.128.log \
+            central_verification.128.rc \
+            outer_verification.json \
+            composite_verification.json; do
+            cmp \
+              <(unzip -p "${assets_dir}/${archive}" "${archive_root}/evidence/${evidence}") \
+              "${assets_dir}/${evidence}"
+          done
+
           internal_pdf_sha="$(
             unzip -p "${assets_dir}/${archive}" \
               "${archive_root}/preprint.pdf" | sha256sum | awk '{print $1}'
@@ -132,22 +153,71 @@ jobs:
             exit 1
           fi
 
-          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+          readonly evidence_run_id="$(
+            jq -er '.run_id | select(type == "string" and length > 0)' \
+              "${assets_dir}/central_verification.json"
+          )"
+          readonly outer_margin="$(
+            jq -er '.margin | select(type == "string" and length > 0)' \
+              "${assets_dir}/outer_verification.json"
+          )"
+          jq -e \
+            --arg sha "${VERIFIED_SHA}" \
+            --arg tree "${source_tree}" \
+            --arg run_id "${evidence_run_id}" \
+            --arg target "0.3805603" \
             '.status == "PASS" and .source_commit == $sha and
              .source_tree == $tree and .source_dirty == false and
-             .precision_bits == 96' \
+             .run_id == $run_id and .target == $target and
+             .decimal_fields_are_diagnostic == true and
+             .precision_bits == 96 and
+             ((.D_margin_lower_mpfr | tonumber) > 0) and
+             ((.integral_upper_mpfr | tonumber) < (.threshold_lower_mpfr | tonumber)) and
+             ((.implied_bound_lower_mpfr | tonumber) > ($target | tonumber))' \
             "${assets_dir}/central_verification.json" >/dev/null
-          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+          jq -e \
+            --arg sha "${VERIFIED_SHA}" \
+            --arg tree "${source_tree}" \
+            --arg run_id "${evidence_run_id}" \
+            --arg target "0.3805603" \
             '.status == "PASS" and .source_commit == $sha and
              .source_tree == $tree and .source_dirty == false and
-             .precision_bits == 128' \
+             .run_id == $run_id and .target == $target and
+             .decimal_fields_are_diagnostic == true and
+             .precision_bits == 128 and
+             ((.D_margin_lower_mpfr | tonumber) > 0) and
+             ((.integral_upper_mpfr | tonumber) < (.threshold_lower_mpfr | tonumber)) and
+             ((.implied_bound_lower_mpfr | tonumber) > ($target | tonumber))' \
             "${assets_dir}/central_verification.128.json" >/dev/null
-          jq -e --arg sha "${VERIFIED_SHA}" --arg tree "${source_tree}" \
+          jq -e \
+            --arg sha "${VERIFIED_SHA}" \
+            --arg tree "${source_tree}" \
+            --arg run_id "${evidence_run_id}" \
+            --arg target "0.3805603" \
+            --arg pin "6bc610e40083ef61a40966dfb5d38612cabc4c5b" \
             '.status == "PASS" and .source_commit == $sha and
-             .source_tree == $tree and .source_dirty == false' \
-            "${assets_dir}/composite_verification.json" >/dev/null
-          jq -e '.status == "PASS"' \
+             .source_tree == $tree and .source_dirty == false and
+             .run_id == $run_id and .target == $target and
+             .verification_mode == "pinned-report-validation-no-arb-rerun" and
+             .pinned_commit == $pin and .checked_sha256_files == 19 and
+             .outer_bins == 170 and .excluded_central_bins == [85, 86] and
+             ((.margin | tonumber) > 0) and
+             ((.outer_max_D | tonumber) < (.threshold | tonumber))' \
             "${assets_dir}/outer_verification.json" >/dev/null
+          jq -e \
+            --arg sha "${VERIFIED_SHA}" \
+            --arg tree "${source_tree}" \
+            --arg run_id "${evidence_run_id}" \
+            --arg target "0.3805603" \
+            --arg statement "c_E > 0.3805603" \
+            --arg outer_margin "${outer_margin}" \
+            '.status == "PASS" and .source_commit == $sha and
+             .source_tree == $tree and .source_dirty == false and
+             .run_id == $run_id and .target == $target and
+             .statement == $statement and .central_bins == [85, 86] and
+             .outer_bins == 170 and .outer_margin == $outer_margin and
+             .lean_verified == false and .peer_reviewed == false' \
+            "${assets_dir}/composite_verification.json" >/dev/null
 
           unzip -p "${assets_dir}/${archive}" \
             "${archive_root}/COMMIT_SHA.txt" | grep -Fqx "${VERIFIED_SHA}"
@@ -157,8 +227,13 @@ jobs:
               --arg sha "${VERIFIED_SHA}" \
               --arg tree "${source_tree}" \
               --arg run_url "${expected_run_url}" \
+              --arg version "${version}" \
+              --arg verification_run_id "${evidence_run_id}" \
               '.commit == $sha and .tree == $tree and
-               .ci_run_url == $run_url and
+               .ci_run_url == $run_url and .version == $version and
+               .verification_run_id == $verification_run_id and
+               .repository == "https://github.com/khanukov/erdos36" and
+               .outer_verification_mode == "pinned-report-validation-no-arb-rerun" and
                .status == "preliminary-unrefereed-not-lean-verified"' >/dev/null
 
           remote_tag_sha="$(
@@ -171,6 +246,10 @@ jobs:
                 awk 'NR == 1 {print $1}'
             )"
           fi
+          if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]; then
+            echo "refusing tag ${tag} at a different commit: ${remote_tag_sha}" >&2
+            exit 1
+          fi
           if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             if [[ -z "${remote_tag_sha}" ]]; then
               echo "release ${tag} exists but its tag is missing" >&2
@@ -181,7 +260,7 @@ jobs:
                 --json isDraft,isPrerelease,name,body,assets
             )"
             jq -e \
-              --arg title "${tag} — preliminary Parseval-prefix bound for Erdős Problem 36" \
+              --arg title "${release_title}" \
               '.isDraft == false and .isPrerelease == true and .name == $title' \
               <<<"${release_json}" >/dev/null
             grep -Fq "${remote_tag_sha}" <<<"$(jq -r .body <<<"${release_json}")"
@@ -199,19 +278,6 @@ jobs:
             fi
             echo "verified prerelease ${tag} already exists at ${remote_tag_sha}"
             exit 0
-          fi
-
-          if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]; then
-            echo "refusing to move existing unpublished tag ${tag}: ${remote_tag_sha}" >&2
-            exit 1
-          fi
-
-          if [[ -z "${remote_tag_sha}" ]]; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git tag -a "${tag}" "${VERIFIED_SHA}" \
-              -m "Erdos 36 preliminary unrefereed preprint ${version}"
-            git push origin "refs/tags/${tag}"
           fi
 
           readonly release_manifest="${assets_dir}/GITHUB_RELEASE_SHA256SUMS.txt"
@@ -237,6 +303,17 @@ jobs:
             exit 1
           fi
 
+          # Validation can take several minutes. Recheck main at the last
+          # possible point before creating any public release identity.
+          require_current_main
+          if [[ -z "${remote_tag_sha}" ]]; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git tag -a "${tag}" "${VERIFIED_SHA}" \
+              -m "Erdos 36 preliminary unrefereed preprint ${version}"
+            git push origin "refs/tags/${tag}"
+          fi
+
           gh release create "${tag}" \
             "${assets_dir}/${archive}" \
             "${assets_dir}/${checksum}" \
@@ -245,5 +322,5 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --verify-tag \
             --prerelease \
-            --title "${tag} — preliminary Parseval-prefix bound for Erdős Problem 36" \
+            --title "${release_title}" \
             --notes-file "${notes}"

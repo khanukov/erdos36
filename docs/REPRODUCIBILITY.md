@@ -35,22 +35,34 @@ sudo apt-get install -y --no-install-recommends \
 The Ubuntu package archive is mutable. Record the installed package versions
 when producing a review report.
 
+The source-bound checks must run inside a Git checkout so that every generated
+evidence file can record and verify the exact commit, tree, and dirty state.
+The release ZIP is a closed inspection/deposit artifact, not a substitute for
+the checkout; clone the repository and detach at its `COMMIT_SHA.txt` value to
+rerun verification.
+
 ## Reproduce the composite decision
 
-Use a clean checkout. After the intended first release tag exists, the release
-checkout is:
+Use a clean checkout of the corrected release:
 
 ```bash
 git clone https://github.com/khanukov/erdos36.git
 cd erdos36
-git checkout --detach v0.1.0-preprint
+git checkout --detach v0.1.1-preprint
 git rev-parse HEAD
 make verify
 ```
 
 Before that tag exists, review the exact commit supplied with the candidate
 archive and record `git rev-parse HEAD` in the report. Do not treat a moving
-branch name as a reproducible identifier.
+branch name as a reproducible identifier. The historical priority snapshot is
+fixed separately at
+[`v0.1.0-preprint`](https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint),
+commit
+[`e11e4bfd2575494c44d5c66542b8f5f27d64c400`](https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400),
+version DOI [`10.5281/zenodo.21969299`](https://doi.org/10.5281/zenodo.21969299).
+The stable concept DOI is
+[`10.5281/zenodo.21969298`](https://doi.org/10.5281/zenodo.21969298).
 
 `make verify` runs one dependency-gated chain:
 
@@ -58,9 +70,10 @@ branch name as a reproducible identifier.
 2. closed source-tree checksum verification;
 3. certificate-to-C embedding checks and mutation tests;
 4. a fresh 96-bit central MPFR run;
-5. download and SHA-256 verification of 19 files from the pinned upstream
-   commit;
-6. structural and numerical validation of the 170 noncentral report rows;
+5. exact-name and SHA-256 verification of the 19 required files from the
+   pinned upstream commit;
+6. structural and numerical validation of the 170 noncentral report rows,
+   including rejection of every positive gap between adjacent bins;
 7. composition of results carrying the same fresh run identifier.
 
 The final line must be:
@@ -104,15 +117,17 @@ from release archives because the upstream material is not relicensed here.
 From a clean committed source tree, run the release steps in this order:
 
 ```bash
-make verify
-make verify-central-128
-make paper
-python3 scripts/build_release.py
-python3 scripts/verify_release.py
+make release-candidate
 ```
 
+The target exports one fresh `VERIFICATION_RUN_ID` to the 96-bit central run,
+outer-report check, composite check, and 128-bit central cross-check before it
+builds and verifies the archive. Running those commands separately without an
+explicit shared `VERIFICATION_RUN_ID` intentionally cannot produce releasable
+evidence.
+
 The manuscript is written to
-`build/erdos36-preprint-0.1.0-preprint.pdf`. The release builder refuses a dirty
+`build/erdos36-preprint-0.1.1-preprint.pdf`. The release builder refuses a dirty
 Git tree, reads the exact commit and tree identifiers, packages tracked source
 files and the required generated evidence, and emits a companion SHA-256 file.
 The builder also rejects verification evidence unless the 96-bit composite run
@@ -120,10 +135,10 @@ and 128-bit cross-check both record that exact clean commit and tree.
 Verify the ZIP with the companion checksum from inside the `build/` directory
 and test it with `unzip -t` before any upload.
 
-The archive uses sorted paths, fixed permissions, and the commit timestamp.
-The current evidence includes a per-run UUID, and PDF bytes can depend on the
-TeX toolchain. Therefore the current project does not claim that two complete
-rebuilds are byte-for-byte identical. The published ZIP's companion checksum,
+The archive is normalized using sorted paths, fixed permissions, and the
+commit timestamp. The current evidence includes a per-run UUID, and PDF bytes
+can depend on the TeX toolchain. Therefore the current project does not claim
+that two complete rebuilds are byte-for-byte identical. The published ZIP's companion checksum,
 `COMMIT_SHA.txt`, `PROVENANCE.json`, and `ARTIFACT_SHA256SUMS.txt` identify the
 exact deposited artifact and its source.
 

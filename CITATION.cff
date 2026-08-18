@@ -2,19 +2,25 @@ cff-version: 1.2.0
 message: "If you use this preliminary certificate, cite the accompanying preprint."
 title: "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
 type: software
-version: 0.1.0-preprint
-date-released: 2026-08-16
+version: 0.1.1-preprint
+date-released: 2026-08-17
 authors:
   - family-names: Khanukov
     given-names: Dmitry
 repository-code: "https://github.com/khanukov/erdos36"
 url: "https://github.com/khanukov/erdos36"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21969298"
+    description: "Zenodo concept DOI for all archived versions"
 license: MIT
 abstract: >-
   Preliminary and unrefereed code and certificate for the proposed composite
   lower bound c_E > 0.3805603. The central two bins are checked by a new
   C/MPFR verifier; 170 outer bins rely on SHA-256-pinned upstream Arb reports.
-  No claim is Lean-verified or independently reproduced.
+  Parseval energy constraints are prior work; the claimed contribution is
+  their finite profile-space prefix projection and its use in the two binding
+  bins. No claim is Lean-verified or independently reproduced.
 preferred-citation:
   type: unpublished
   title: "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
@@ -22,6 +28,12 @@ preferred-citation:
     - family-names: Khanukov
       given-names: Dmitry
   year: 2026
-  version: "0.1.0-preprint"
+  version: "0.1.1-preprint"
   status: preprint
-  notes: "Preliminary, unrefereed preprint."
+  notes: >-
+    Preliminary, unrefereed preprint. The concept DOI is
+    10.5281/zenodo.21969298. Historical v0.1.0-preprint has version DOI
+    10.5281/zenodo.21969299 and exact source commit
+    e11e4bfd2575494c44d5c66542b8f5f27d64c400. No version DOI is claimed for
+    v0.1.1-preprint until Zenodo assigns it. The software and repository
+    documentation are MIT-licensed; the manuscript under paper/ is CC BY 4.0.

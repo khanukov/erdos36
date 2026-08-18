@@ -6,11 +6,15 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+
+sys.dont_write_bytecode = True
+from release_evidence import EvidenceError, validate_release_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "build"
@@ -42,6 +46,8 @@ def main() -> int:
         raise SystemExit("refusing release build from a dirty source tree")
 
     version = (ROOT / "VERSION").read_text().strip()
+    if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-preprint", version) is None:
+        raise SystemExit(f"invalid preprint VERSION: {version}")
     commit = git("rev-parse", "HEAD")
     tree = git("rev-parse", "HEAD^{tree}")
     commit_epoch = int(git("show", "-s", "--format=%ct", "HEAD"))
@@ -77,33 +83,11 @@ def main() -> int:
             raise SystemExit(f"missing generated release input: {path.relative_to(ROOT)}")
         files[name] = path.read_bytes()
 
-    central = json.loads(files["evidence/central_verification.json"])
-    outer = json.loads(files["evidence/outer_verification.json"])
-    composite = json.loads(files["evidence/composite_verification.json"])
-    if not (
-        central.get("status") == outer.get("status") == composite.get("status") == "PASS"
-        and central.get("run_id") == outer.get("run_id") == composite.get("run_id")
-    ):
-        raise SystemExit("release evidence is not one successful composite run")
-    if (
-        composite.get("source_commit") != commit
-        or composite.get("source_tree") != tree
-        or composite.get("source_dirty") is not False
-        or central.get("source_commit") != commit
-        or central.get("source_tree") != tree
-        or central.get("source_dirty") is not False
-    ):
-        raise SystemExit("composite evidence is not bound to this clean source commit")
-
-    central128 = json.loads(files["evidence/central_verification.128.json"])
-    if (
-        central128.get("status") != "PASS"
-        or central128.get("precision_bits") != 128
-        or central128.get("source_commit") != commit
-        or central128.get("source_tree") != tree
-        or central128.get("source_dirty") is not False
-    ):
-        raise SystemExit("128-bit evidence is not bound to this clean source commit")
+    try:
+        evidence = validate_release_evidence(files, commit=commit, tree=tree)
+    except EvidenceError as exc:
+        raise SystemExit(f"invalid generated release evidence: {exc}") from exc
+    composite = evidence["composite"]
 
     run_url = None
     if os.environ.get("GITHUB_SERVER_URL") and os.environ.get("GITHUB_REPOSITORY") and os.environ.get("GITHUB_RUN_ID"):

@@ -16,9 +16,12 @@ TARGET = Decimal("0.3805603")
 
 
 def git(*args: str) -> str:
-    return subprocess.check_output(
-        ["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
-    ).strip()
+    try:
+        return subprocess.check_output(
+            ["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SystemExit("FAIL: source-bound verification requires a Git checkout") from exc
 
 
 def load_json(path: Path) -> dict:
@@ -59,6 +62,12 @@ def main() -> int:
         raise SystemExit("FAIL: outer target does not match the claimed target")
     if outer.get("verification_mode") != "pinned-report-validation-no-arb-rerun":
         raise SystemExit("FAIL: unrecognized outer verification mode")
+    if outer.get("pinned_commit") != "6bc610e40083ef61a40966dfb5d38612cabc4c5b":
+        raise SystemExit("FAIL: outer evidence does not use the pinned Price commit")
+    if outer.get("checked_sha256_files") != 19:
+        raise SystemExit("FAIL: outer evidence does not cover the exact 19-file manifest")
+    if outer.get("outer_bins") != 170 or outer.get("excluded_central_bins") != [85, 86]:
+        raise SystemExit("FAIL: outer evidence has the wrong bin scope")
 
     source_commit = git("rev-parse", "HEAD")
     source_tree = git("rev-parse", "HEAD^{tree}")
@@ -69,6 +78,12 @@ def main() -> int:
         or central.get("source_dirty") != source_dirty
     ):
         raise SystemExit("FAIL: central evidence does not match the current source state")
+    if (
+        outer.get("source_commit") != source_commit
+        or outer.get("source_tree") != source_tree
+        or outer.get("source_dirty") != source_dirty
+    ):
+        raise SystemExit("FAIL: outer evidence does not match the current source state")
 
     run_id = os.environ.get("VERIFICATION_RUN_ID")
     if args.require_fresh:

@@ -4,58 +4,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <gmp.h>
+#include <mpfr.h>
 
-/* Minimal MPFR ABI declarations; the runtime library is libmpfr.so.6. */
-typedef long mpfr_prec_t;
-typedef long mpfr_exp_t;
-typedef int mpfr_sign_t;
-typedef unsigned long mp_limb_t;
-typedef struct {
-    mpfr_prec_t _mpfr_prec;
-    mpfr_sign_t _mpfr_sign;
-    mpfr_exp_t _mpfr_exp;
-    mp_limb_t *_mpfr_d;
-} __mpfr_struct;
-typedef __mpfr_struct mpfr_t[1];
-typedef __mpfr_struct *mpfr_ptr;
-typedef const __mpfr_struct *mpfr_srcptr;
-typedef int mpfr_rnd_t;
-
-#define MPFR_RNDN 0
-#define MPFR_RNDZ 1
-#define MPFR_RNDU 2
-#define MPFR_RNDD 3
 #ifndef PREC
 #define PREC 96
 #endif
-
-extern void mpfr_init2(mpfr_ptr, mpfr_prec_t);
-extern void mpfr_clear(mpfr_ptr);
-extern int mpfr_set_str(mpfr_ptr, const char*, int, mpfr_rnd_t);
-extern int mpfr_set(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_set_si(mpfr_ptr, long, mpfr_rnd_t);
-extern int mpfr_set_ui(mpfr_ptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_add(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_sub(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_add_ui(mpfr_ptr, mpfr_srcptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_sub_ui(mpfr_ptr, mpfr_srcptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_mul(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_mul_ui(mpfr_ptr, mpfr_srcptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_mul_si(mpfr_ptr, mpfr_srcptr, long, mpfr_rnd_t);
-extern int mpfr_div(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_div_ui(mpfr_ptr, mpfr_srcptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_div_2ui(mpfr_ptr, mpfr_srcptr, unsigned long, mpfr_rnd_t);
-extern int mpfr_sqr(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_neg(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_abs(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_sin(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_cos(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
-extern int mpfr_const_pi(mpfr_ptr, mpfr_rnd_t);
-extern int mpfr_cmp(mpfr_srcptr, mpfr_srcptr);
-extern int mpfr_cmp_si(mpfr_srcptr, long);
-extern int mpfr_cmp_ui(mpfr_srcptr, unsigned long);
-extern double mpfr_get_d(mpfr_srcptr, mpfr_rnd_t);
-extern size_t __gmpfr_out_str(FILE*, int, size_t, mpfr_srcptr, mpfr_rnd_t);
 
 typedef struct { mpfr_t lo, hi; } Ival;
 
@@ -687,12 +641,14 @@ int main(int argc,char**argv){
 
     printf("%s\n",pass?"PASS":"FAIL");
     printf("precision_bits=%d\n",PREC);
+    printf("mpfr_version=%s\n",mpfr_get_version());
+    printf("gmp_version=%s\n",gmp_version);
     printf("target_exact=%s\n",target_s);
     printf("target_binary64_diagnostic=%.17g\n",mpfr_get_d(target,MPFR_RNDN));
-    printf("integral_upper_mpfr="); __gmpfr_out_str(stdout,10,0,integral,MPFR_RNDU); printf("\n");
-    printf("threshold_lower_mpfr="); __gmpfr_out_str(stdout,10,0,threshold,MPFR_RNDD); printf("\n");
-    printf("implied_bound_lower_mpfr="); __gmpfr_out_str(stdout,10,0,bound,MPFR_RNDD); printf("\n");
-    printf("D_margin_lower_mpfr="); __gmpfr_out_str(stdout,10,0,tmp1,MPFR_RNDD); printf("\n");
+    printf("integral_upper_mpfr="); mpfr_out_str(stdout,10,0,integral,MPFR_RNDU); printf("\n");
+    printf("threshold_lower_mpfr="); mpfr_out_str(stdout,10,0,threshold,MPFR_RNDD); printf("\n");
+    printf("implied_bound_lower_mpfr="); mpfr_out_str(stdout,10,0,bound,MPFR_RNDD); printf("\n");
+    printf("D_margin_lower_mpfr="); mpfr_out_str(stdout,10,0,tmp1,MPFR_RNDD); printf("\n");
     printf("integral_upper_binary64_diagnostic=%.17g\n",mpfr_get_d(integral,MPFR_RNDU));
     printf("threshold_lower_binary64_diagnostic=%.17g\n",mpfr_get_d(threshold,MPFR_RNDD));
     printf("implied_bound_lower_binary64_diagnostic=%.17g\n",mpfr_get_d(bound,MPFR_RNDD));

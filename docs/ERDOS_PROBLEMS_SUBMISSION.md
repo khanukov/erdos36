@@ -4,9 +4,10 @@
 
 This file contains a conservative submission text for review of a partial
 bound improvement. It is not an authorization to contact maintainers, post on
-the problem page, open a database pull request, or publish an artifact. No such
-action should occur until the exact public release exists and the release
-gates in `docs/PREPRINT_RELEASE.md` have passed.
+the problem page, open a database pull request, or publish an artifact. The
+historical `v0.1.0-preprint` priority release exists; outreach for the corrected
+package should wait until the exact `v0.1.1-preprint` release exists and the
+release gates in `docs/PREPRINT_RELEASE.md` have passed.
 
 Erdős Problem 36 remains open. A lower-bound improvement does not solve it and
 does not justify changing its status to `proved`, `solved`, or `proved (Lean)`.
@@ -25,15 +26,17 @@ differ.
 
 ## Submission text
 
-Use the following text only after the repository and the
-`v0.1.0-preprint` release are public and their checksums have been verified.
+Use the following text only after `v0.1.1-preprint` is public and its checksums
+and exact release commit have been verified.
 
 > **Preliminary partial result: proposed lower bound \(c_E>0.3805603\).**
 >
 > I am sharing a preliminary, unrefereed computer-assisted certificate for
 > the lower bound \(c_E>0.3805603\) in Erdős Problem 36. The new contribution
-> is a finite Parseval-prefix constraint used to replace the two binding
-> central mean bins, 85 and 86, of the public 172-bin Price certificate at
+> is not the Parseval energy constraint itself, which is prior work due to
+> White, but its finite profile-space prefix projection and use to replace the
+> two binding central mean bins, 85 and 86, of the public 172-bin Price
+> certificate at
 > commit `6bc610e40083ef61a40966dfb5d38612cabc4c5b`.
 >
 > The repository's directed-rounding C/MPFR checker freshly verifies the new
@@ -44,6 +47,11 @@ Use the following text only after the repository and the
 >
 > Repository and reproduction instructions:
 > https://github.com/khanukov/erdos36
+>
+> Zenodo concept DOI: https://doi.org/10.5281/zenodo.21969298
+>
+> Historical `v0.1.0-preprint` version DOI:
+> https://doi.org/10.5281/zenodo.21969299
 >
 > I request review of (1) the Parseval-prefix normalization and sign, (2) the
 > positive-part integration and interval bounds in the C checker, (3) the
@@ -58,9 +66,15 @@ Use the following text only after the repository and the
 > test drafting, auditing, and editorial work; responsibility for the claim
 > and release remains with the author.
 
-The current repository version has no DOI. Do not invent a DOI or describe a
-Zenodo draft as a published record. If a DOI is later issued, add the exact DOI
-and the exact release commit to the submission text before it is posted.
+Price's `0.38055470` result should be described as the strongest public
+computer-certified claim currently used as the comparison point, not as an
+officially accepted record. The concept DOI above is stable. The historical
+`v0.1.0-preprint` record is tied to
+[release `v0.1.0-preprint`](https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint)
+and exact commit
+[`e11e4bfd2575494c44d5c66542b8f5f27d64c400`](https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400).
+Do not invent a `v0.1.1-preprint` version DOI; add it only after Zenodo assigns
+one, together with the exact new release commit.
 
 ## Requested disposition
 
@@ -79,8 +93,9 @@ call the result accepted, published, independently verified, or peer reviewed.
 
 ## Evidence to attach after release
 
-Provide links to the exact release page, immutable tag or commit, manuscript,
-release ZIP, companion SHA-256 file, and `docs/INDEPENDENT_REVIEW.md`. Report
+Provide links to the exact `v0.1.1-preprint` release page, protected tag or
+exact commit, manuscript, release ZIP, companion SHA-256 file, Zenodo concept
+record, and `docs/INDEPENDENT_REVIEW.md`. Report
 the actual CI run and external review records rather than a checklist of work
 that has not occurred.
 

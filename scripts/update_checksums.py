@@ -7,13 +7,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_DIRS = {".git", "build", "internal-handoff", "__pycache__", ".pytest_cache"}
 EXCLUDED_PREFIXES = {"upstream/cache"}
-EXCLUDED_NAMES = {"SHA256SUMS.txt"}
 GENERATED_SUFFIXES = {".aux", ".blg", ".fdb_latexmk", ".fls", ".log", ".out", ".toc", ".synctex.gz"}
 
 
 def excluded(path: Path) -> bool:
     rel = path.relative_to(ROOT).as_posix()
-    if path.name in EXCLUDED_NAMES or any(part in EXCLUDED_DIRS for part in path.parts):
+    # Exclude only the root manifest itself.  In particular,
+    # upstream/SHA256SUMS.txt is part of the repository checksum closure.
+    if rel == "SHA256SUMS.txt" or any(part in EXCLUDED_DIRS for part in path.parts):
         return True
     if any(rel == prefix or rel.startswith(prefix + "/") for prefix in EXCLUDED_PREFIXES):
         return True

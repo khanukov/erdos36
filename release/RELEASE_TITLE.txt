@@ -1,0 +1,1 @@
+hardened preliminary Parseval-prefix bound for Erdős Problem 36

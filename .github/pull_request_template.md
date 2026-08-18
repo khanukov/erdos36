@@ -13,12 +13,9 @@
 
 ## Verification
 
-- [ ] `make verify`
-- [ ] `make verify-central-128`
-- [ ] `make paper` and visual inspection of every page
+- [ ] `make release-candidate` (one source-bound run at 96/128 bits plus archive verification)
+- [ ] visual inspection of every page in the generated PDF
 - [ ] `make arxiv` and clean unpacked compilation
-- [ ] `python3 scripts/build_release.py`
-- [ ] `python3 scripts/verify_release.py`
 - [ ] `git diff --check`
 
 Record the exact commit, run IDs, margins, and any deviation from the documented

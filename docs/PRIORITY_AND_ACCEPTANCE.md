@@ -7,7 +7,15 @@ what was publicly disclosed by a particular date. It does not by itself show
 that the mathematics is correct, novel, independently reproduced, peer
 reviewed, or accepted by the Erdős Problems project.
 
-This repository version has no DOI and records no independent reproduction,
+This project has Zenodo concept DOI
+[`10.5281/zenodo.21969298`](https://doi.org/10.5281/zenodo.21969298). Its
+historical `v0.1.0-preprint` snapshot has version DOI
+[`10.5281/zenodo.21969299`](https://doi.org/10.5281/zenodo.21969299), exact
+[GitHub release](https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint),
+and exact source commit
+[`e11e4bfd2575494c44d5c66542b8f5f27d64c400`](https://github.com/khanukov/erdos36/commit/e11e4bfd2575494c44d5c66542b8f5f27d64c400).
+No `v0.1.1-preprint` version DOI is claimed before Zenodo assigns it. The
+project still records no independent reproduction of the new central pair,
 peer-review decision, Lean proof, or Erdős Problems acceptance. Those absences
 must remain visible in every priority statement.
 
@@ -38,6 +46,11 @@ certificate was subsequently rerun by the `occisn` project. This is direct
 evidence that a repository and successful computation do not automatically
 become a recorded/accepted improvement; clear exposition, independent review,
 and explicit maintainer/community follow-up remain important.
+
+Accordingly, Price's value is described in this repository as the strongest
+public computer-certified lower-bound claim found in the audit and as the
+comparison point for the present numerical improvement. It is not described
+as an officially recorded or accepted lower-bound record.
 
 ## Inference from the examples
 
@@ -76,8 +89,10 @@ engineering example but is not evidence that this result has been accepted.
 
 ## Priority record for this result
 
-The priority claim should be limited to the finite Parseval-prefix central-bin
-replacement and the resulting proposed composite lower bound
+Parseval energy constraints themselves are prior work in White's framework.
+The priority claim should therefore be limited to the finite profile-space
+Parseval-prefix projection, the resulting central-bin certificate and
+directed-rounding verification, and the proposed composite lower bound
 `c_E > 0.3805603`, conditional on the pinned outer-bin reports. A defensible
 public record should preserve:
 
@@ -89,7 +104,7 @@ public record should preserve:
 - authorship, AI-assistance, licensing, and prior-art disclosures;
 - later corrections as new versions rather than silent replacement.
 
-The first publication may honestly establish a preliminary priority timestamp
-before independent review, provided it is labelled that way. It must not turn
-that timestamp into language of correctness or acceptance. Independent review
-and community recording are later, separately evidenced events.
+The historical first publication honestly establishes a preliminary priority
+timestamp but not correctness or acceptance. Corrections belong in linked new
+versions, never in a rewritten `v0.1.0-preprint` tag or record. Independent
+review and community recording are later, separately evidenced events.

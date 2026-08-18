@@ -2,16 +2,17 @@
 
 ## Current status
 
-The new central certificate has not received an independent clean-room
-reproduction or peer review. This repository validates pinned upstream reports
-for the other 170 bins but does not rerun their Arb computation. No review
-request has been sent by preparing this document.
+As of `v0.1.1-preprint`, the new central certificate has not received an
+independent clean-room reproduction or peer review. This repository validates
+pinned upstream reports for the other 170 bins but does not rerun their Arb
+computation. No review request has been sent by preparing this document.
 
 ## Exact review request
 
-The following request is ready for use only after the public
-`v0.1.0-preprint` release exists. The reviewer must confirm the commit shown on
-that release before beginning.
+The following request is ready for use only after the public corrected
+`v0.1.1-preprint` release exists. The reviewer must confirm the exact commit
+shown on that release before beginning; a moving `main` branch is not a review
+identifier.
 
 > **Subject: Independent verification request — proposed Erdős 36 lower bound \(c_E>0.3805603\)**
 >
@@ -22,8 +23,13 @@ that release before beginning.
 > `6bc610e40083ef61a40966dfb5d38612cabc4c5b`.
 >
 > Please review the exact source commit attached to release
-> `v0.1.0-preprint` at https://github.com/khanukov/erdos36 and record that
+> `v0.1.1-preprint` at https://github.com/khanukov/erdos36 and record that
 > commit and the release ZIP SHA-256 digest in your report.
+> The stable Zenodo concept DOI is
+> https://doi.org/10.5281/zenodo.21969298. The earlier priority snapshot,
+> which this correction does not rewrite, is `v0.1.0-preprint` at exact commit
+> `e11e4bfd2575494c44d5c66542b8f5f27d64c400` with version DOI
+> https://doi.org/10.5281/zenodo.21969299.
 >
 > The minimum reproduction is a clean `make verify` run followed by
 > `make verify-central-128`. A stronger review would independently inspect or
@@ -101,6 +107,9 @@ that release before beginning.
 - Check the novelty claim against White's Fourier/convex framework, Price's
   certificate, the `occisn` independent audit, and other public lower-bound
   work.
+- Treat White's Parseval energy constraint as prior work; assess only the
+  claimed finite profile-space prefix projection, certificate construction,
+  central-bin application, and resulting numerical bound as possible novelty.
 - Check that copied or derivative material is neither vendored nor relicensed
   without permission.
 - Confirm that every public description says preliminary, unrefereed, partial,
@@ -112,7 +121,7 @@ Use the narrowest supported description:
 
 | Description | Minimum evidence |
 |---|---|
-| Supplied workflow reproduced | Clean execution of the exact release with matching hashes and passing outputs. |
+| Supplied workflow reproduced | Clean execution of the exact `v0.1.1-preprint` release with matching hashes and passing outputs. |
 | Supplied implementation audited | A documented line-by-line soundness review in addition to execution. |
 | Central result independently reproduced | A distinct implementation checks the analytic rows and central integral at the stated target. |
 | Full composite independently reproduced | The central result is independently checked and the upstream Arb computation or all retained outer rows are independently rerun. |

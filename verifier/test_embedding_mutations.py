@@ -16,9 +16,9 @@ SOURCE = ROOT / "verifier" / "verify_central_mpfr.c"
 BASE = json.loads((ROOT / "certificate" / "central_certificate.json").read_text())
 
 
-def accepted(data: dict) -> bool:
+def accepted_text(text: str) -> bool:
     with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8") as handle:
-        json.dump(data, handle)
+        handle.write(text)
         handle.flush()
         result = subprocess.run(
             [sys.executable, str(CHECKER), handle.name, str(SOURCE)],
@@ -27,6 +27,10 @@ def accepted(data: dict) -> bool:
             check=False,
         )
     return result.returncode == 0
+
+
+def accepted(data: dict) -> bool:
+    return accepted_text(json.dumps(data))
 
 
 if not accepted(BASE):
@@ -62,6 +66,23 @@ mutation(
     lambda data: next(row for row in data["rows"] if row["kind"] == "parseval").__setitem__("param", 190),
 )
 mutation("negative multiplier", lambda data: data["rows"][1].__setitem__("lambda", "-1e-20"))
+mutation("non-finite bound", lambda data: data["rows"][1].__setitem__("B", "NaN"))
+mutation("non-finite multiplier", lambda data: data["rows"][1].__setitem__("lambda", "Infinity"))
+mutation("non-finite free frequency", lambda data: data["rows"][1].__setitem__("param", "Infinity"))
 mutation("extra row", lambda data: data["rows"].append(copy.deepcopy(data["rows"][1])))
+mutation("global row kind order", lambda data: data["rows"].__setitem__(slice(0, 2), [data["rows"][1], data["rows"][0]]))
 
-print("PASS: 11 load-bearing mutations rejected")
+raw = json.dumps(BASE)
+duplicate_top = raw.replace(
+    '"target": "0.3805603",',
+    '"target": "0.3805603", "target": "0.3805603",',
+    1,
+)
+if accepted_text(duplicate_top):
+    raise SystemExit("FAIL: duplicate top-level JSON key was accepted")
+
+duplicate_row = raw.replace('"kind": "t2"', '"kind": "t2", "kind": "t2"', 1)
+if accepted_text(duplicate_row):
+    raise SystemExit("FAIL: duplicate row JSON key was accepted")
+
+print("PASS: 17 load-bearing mutations rejected")

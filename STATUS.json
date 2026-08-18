@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
-  "version": "0.1.0-preprint",
-  "date": "2026-08-16",
+  "version": "0.1.1-preprint",
+  "date": "2026-08-17",
   "statement": "c_E > 0.3805603",
   "status": "PRELIMINARY_COMPOSITE_CERTIFICATE_PASS_UNREFEREED",
+  "novelty_scope": "finite profile-space Parseval-prefix projection, its use in the two binding central bins, and directed-rounding verification; Parseval energy constraints themselves are prior work",
   "target": "0.3805603",
   "previous_pinned_lower_bound": "0.380554702762594012374583687722204899264569679656794709558276907639504536129582",
   "improvement": "0.000005597237405987625416312277795100735430320343205290441723092360495463870418",
@@ -25,6 +26,14 @@
     "source_commit": "6bc610e40083ef61a40966dfb5d38612cabc4c5b",
     "reported_max_D_upper_including_radius": "2.627538530873375790090272175878307131812586378826",
     "verification_mode": "SHA-256-pinned report validation; upstream Arb computation is not rerun"
+  },
+  "archival_record": {
+    "concept_doi": "10.5281/zenodo.21969298",
+    "current_version_doi": null,
+    "current_version_doi_policy": "assigned after deposit; record as historical_v0.1.1_version_doi in the next source version; never rewrite a published tag",
+    "historical_v0.1.0_version_doi": "10.5281/zenodo.21969299",
+    "historical_v0.1.0_release": "https://github.com/khanukov/erdos36/releases/tag/v0.1.0-preprint",
+    "historical_v0.1.0_commit": "e11e4bfd2575494c44d5c66542b8f5f27d64c400"
   },
   "lean_checked_claims": [],
   "lean_verified": false,

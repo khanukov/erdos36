@@ -13,7 +13,24 @@ if len(sys.argv) != 3:
     raise SystemExit("usage: check_embedding.py certificate.json verifier.c")
 
 certificate_path, source_path = map(Path, sys.argv[1:])
-candidate = json.loads(certificate_path.read_text(encoding="utf-8"))
+
+
+def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+try:
+    candidate = json.loads(
+        certificate_path.read_text(encoding="utf-8"),
+        object_pairs_hook=unique_object,
+    )
+except ValueError as exc:
+    raise SystemExit(f"invalid certificate JSON: {exc}") from exc
 source = source_path.read_text(encoding="utf-8")
 
 
@@ -72,9 +89,10 @@ for index, row in enumerate(candidate["rows"]):
     require(isinstance(row["lambda"], str), f"row {index}: lambda must be a decimal string")
     try:
         multiplier = Decimal(row["lambda"])
-        Decimal(row["B"])
+        bound = Decimal(row["B"])
     except InvalidOperation as exc:
         raise AssertionError(f"row {index}: invalid decimal") from exc
+    require(multiplier.is_finite() and bound.is_finite(), f"row {index}: non-finite decimal")
     require(multiplier >= 0, f"row {index}: negative multiplier")
 
 free = [row for row in candidate["rows"] if row["kind"] == "cos"]
@@ -83,13 +101,30 @@ parseval = [row for row in candidate["rows"] if row["kind"] == "parseval"]
 t2 = [row for row in candidate["rows"] if row["kind"] == "t2"]
 
 require(len(t2) == 1 and t2[0]["param"] is None, "expected one t2 row")
+expected_kind_order = (
+    ["t2"] * len(t2)
+    + ["cos"] * len(free)
+    + ["cos_pi"] * len(cos_pi)
+    + ["parseval"] * len(parseval)
+)
+require(
+    [row["kind"] for row in candidate["rows"]] == expected_kind_order,
+    "rows must use canonical global kind order: t2, cos, cos_pi, parseval",
+)
 require(all(row["B"] == "0" for row in cos_pi), "cos_pi B must be exactly 0")
 require(all(row["B"] == "0.5" for row in parseval), "parseval B must be exactly 0.5")
 require([int(row["param"]) for row in parseval] == [191, 195, 200], "wrong prefixes")
-require(all(isinstance(row["param"], int) for row in cos_pi + parseval), "integer mode required")
+require(all(type(row["param"]) is int for row in cos_pi + parseval), "integer mode required")
 require(all(isinstance(row["param"], str) for row in free), "free frequency must be a string")
 require(all(int(row["param"]) >= 1 for row in cos_pi + parseval), "mode must be positive")
-require(all(Decimal(row["param"]) > 0 for row in free), "free frequency must be positive")
+try:
+    free_frequencies = [Decimal(row["param"]) for row in free]
+except InvalidOperation as exc:
+    raise AssertionError("invalid free frequency") from exc
+require(
+    all(value.is_finite() and value > 0 for value in free_frequencies),
+    "free frequency must be finite and positive",
+)
 
 require(define("NFREE") == len(free), "NFREE mismatch")
 require(define("NCP") == len(cos_pi), "NCP mismatch")

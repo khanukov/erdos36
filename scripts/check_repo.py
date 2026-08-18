@@ -25,11 +25,17 @@ REQUIRED = {
     "verifier/run_central_check.sh",
     "upstream/fetch_upstream.py",
     "upstream/verify_outer_bins.py",
+    "upstream/pinned_manifest.py",
+    "upstream/test_pinned_inputs.py",
     "upstream/SHA256SUMS.txt",
     "scripts/verify_all.sh",
     "scripts/verify_composite.py",
+    "scripts/build_arxiv.py",
     "scripts/build_release.py",
     "scripts/verify_release.py",
+    "scripts/release_evidence.py",
+    "scripts/test_release_mutations.py",
+    "scripts/test_parse_central_log.py",
     "paper/main.tex",
     "paper/references.bib",
     "paper/LICENSE",
@@ -40,6 +46,7 @@ REQUIRED = {
     "docs/INDEPENDENT_REVIEW.md",
     ".github/workflows/publish-preprint.yml",
     "release/RELEASE_NOTES.template.md",
+    "release/RELEASE_TITLE.txt",
 }
 
 
@@ -57,7 +64,7 @@ for forbidden in ("zenodo.template.json", "paper/main.pdf"):
         fail(f"generated or placeholder file present: {forbidden}")
 
 version = (ROOT / "VERSION").read_text().strip()
-if version != "0.1.0-preprint":
+if version != "0.1.1-preprint":
     fail(f"unexpected VERSION: {version}")
 
 title = "A Parseval-Prefix Improvement for Erdős' Minimum-Overlap Problem"
@@ -66,7 +73,7 @@ zenodo_checks = {
     "title": zenodo.get("title") == title,
     "version": zenodo.get("version") == version,
     "resource type": zenodo.get("upload_type") == "publication" and zenodo.get("publication_type") == "preprint",
-    "date": zenodo.get("publication_date") == "2026-08-16",
+    "date": zenodo.get("publication_date") == "2026-08-17",
     "creator": zenodo.get("creators") == [{"name": "Khanukov, Dmitry"}],
     "mixed-scope license": zenodo.get("license") == "other-open",
 }
@@ -83,7 +90,7 @@ for expected in (
     "cff-version: 1.2.0",
     f'title: "{title}"',
     f"version: {version}",
-    "date-released: 2026-08-16",
+    "date-released: 2026-08-17",
     'repository-code: "https://github.com/khanukov/erdos36"',
     "license: MIT",
     "family-names: Khanukov",
@@ -101,8 +108,8 @@ paper = (
 )
 for expected in (
     r"\author{Dmitry Khanukov}",
-    r"\date{August 16, 2026}",
-    r"\textbf{Status: Preliminary and unrefereed.}",
+    r"\date{August 17, 2026}",
+    "Status: Preliminary and unrefereed.",
     "not Lean-verified",
     r"\url{https://github.com/khanukov/erdos36}",
 ):
@@ -118,10 +125,22 @@ checks = {
     "review status": status.get("peer_reviewed") is False,
     "problem status": status.get("solves_erdos_problem_36") is False,
     "upstream pin": status.get("outer", {}).get("source_commit") == "6bc610e40083ef61a40966dfb5d38612cabc4c5b",
+    "version DOI pending": status.get("archival_record", {}).get("current_version_doi") is None,
+    "version DOI policy": status.get("archival_record", {}).get("current_version_doi_policy")
+    == "assigned after deposit; record as historical_v0.1.1_version_doi in the next source version; never rewrite a published tag",
 }
 for name, passed in checks.items():
     if not passed:
         fail(f"STATUS.json mismatch: {name}")
+
+release_title_suffix = (ROOT / "release" / "RELEASE_TITLE.txt").read_text(encoding="utf-8")
+if (
+    release_title_suffix != release_title_suffix.strip() + "\n"
+    or "\n" in release_title_suffix.rstrip("\n")
+    or "preliminary" not in release_title_suffix.lower()
+    or "Erdős Problem 36" not in release_title_suffix
+):
+    fail("release title must be one disclosure-bearing newline-terminated line")
 
 critical = ["README.md", "RESULT.md", "CITATION.cff", ".zenodo.json", "paper/main.tex"]
 text = "\n".join((ROOT / name).read_text(encoding="utf-8") for name in critical)
@@ -151,11 +170,52 @@ for expected in (
     '.ci_run_url == $run_url',
     "refusing to publish a stale main verification run",
     "--prerelease",
+    f'readonly intended_version="{version}"',
+    'if [[ "${version}" != "${intended_version}" ]]',
     'readonly tag="v${version}"',
+    'readonly release_title_suffix="$(tr -d \'\\r\\n\' < release/RELEASE_TITLE.txt)"',
+    'readonly release_title="${tag} — ${release_title_suffix}"',
     'readonly artifact="erdos36-priority-package-${VERIFIED_SHA}"',
 ):
     if expected not in publish_workflow:
         fail(f"publish workflow missing fail-closed release rule: {expected}")
+
+version_guard = f'''readonly intended_version="{version}"
+          readonly version="$(tr -d '\\r\\n' < VERSION)"
+          if [[ "${{version}}" != "${{intended_version}}" ]]; then
+            echo "release intent mismatch: expected ${{intended_version}}, got ${{version}}" >&2
+            exit 1
+          fi'''
+if version_guard not in publish_workflow:
+    fail("publish workflow VERSION guard is not an exact exiting block")
+
+for callsite in ('--arg title "${release_title}"', '--title "${release_title}"'):
+    if publish_workflow.count(callsite) != 1:
+        fail(f"publish workflow must use the centralized release title exactly once: {callsite}")
+if "hardened preliminary Parseval-prefix bound" in publish_workflow:
+    fail("publish workflow hard-codes the release title instead of reading RELEASE_TITLE.txt")
+
+tag_mismatch_guard = 'if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]'
+existing_release_check = 'if gh release view "${tag}"'
+main_check_definition = publish_workflow.index("require_current_main() {")
+main_check_calls = [
+    match.start()
+    for match in re.finditer(r"^          require_current_main$", publish_workflow, re.MULTILINE)
+]
+artifact_download = publish_workflow.index('gh run download "${SOURCE_RUN_ID}"')
+tag_push = publish_workflow.index('git push origin "refs/tags/${tag}"')
+release_create = publish_workflow.index('gh release create "${tag}"')
+if publish_workflow.index(tag_mismatch_guard) > publish_workflow.index(existing_release_check):
+    fail("publish workflow checks existing release before binding the tag to VERIFIED_SHA")
+if len(main_check_calls) != 2 or not (
+    main_check_definition
+    < main_check_calls[0]
+    < artifact_download
+    < main_check_calls[1]
+    < tag_push
+    < release_create
+):
+    fail("publish workflow must check main before validation and again before tag/release creation")
 
 release_notes = (ROOT / "release" / "RELEASE_NOTES.template.md").read_text(
     encoding="utf-8"

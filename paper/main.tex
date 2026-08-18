@@ -21,31 +21,34 @@
 
 \title{A Parseval-Prefix Improvement for Erd\H{o}s' Minimum-Overlap Problem}
 \input{author-config.tex}
-\date{August 16, 2026}
+\date{August 17, 2026}
 
 \begin{document}
 
 \begin{abstract}
-We give a computer-assisted proof that the asymptotic constant in Erd\H{o}s'
-minimum-overlap problem satisfies
+We present a preliminary computer-assisted certificate supporting the bound
+that the asymptotic constant in Erd\H{o}s' minimum-overlap problem satisfies
 \[
   c_E>0.3805603.
 \]
-The previous certified lower bound was
-$0.380554702762594012\ldots$.  The new ingredient is a finite
-Parseval-prefix inequality, projected directly into the overlap-profile dual
-language and used to replace the two binding central mean bins of a public
-172-bin certificate.  A directed-rounding MPFR program verifies the new
-central positive-part integral; the remaining 170 bins are inherited from
-pinned Arb reports with verified hashes.  The optimizer that found the
+Our comparison point is the public candidate bound
+$0.380554702762594012\ldots$.  Parseval energy constraints were already used
+by White.  The contribution claimed here is their finite prefix projection
+into the compact overlap-profile dual, the resulting replacement of the two
+binding central mean bins of a public 172-bin certificate, and its
+directed-rounding MPFR verification.  The remaining 170 bins are inherited
+from pinned Arb reports with verified hashes.  The optimizer that found the
 multipliers is not part of the proof.  This manuscript is preliminary and
-unrefereed, and the proof has not been formalized or verified in Lean.
+unrefereed, and the proof has not been independently reproduced, formalized,
+or verified in Lean.
 \end{abstract}
 
 \maketitle
 
 \begin{center}
-\textbf{Status: Preliminary and unrefereed.}
+\textbf{Version 0.1.1-preprint. Status: Preliminary and unrefereed.}\\
+\href{https://doi.org/10.5281/zenodo.21969298}%
+{Zenodo concept DOI: 10.5281/zenodo.21969298}
 \end{center}
 
 \section{Introduction}
@@ -70,19 +73,27 @@ The minimum-overlap problem, originating with Erd\H{o}s
 Haugland developed strong upper constructions
 \cite{Haugland1996,Haugland2016}.  White introduced the modern Fourier and
 convex-optimization approach to lower bounds \cite{White2022}.  Price later
-publicly posted a compact positive-part dual certificate, checked with Arb, proving
-$c_E>0.38055470$ and recording the sharper numerical consequence
-$0.380554702762594012\ldots$ \cite{Price2026}.
+publicly posted a compact positive-part dual certificate, checked with Arb,
+supporting the candidate bound $c_E>0.38055470$ and the sharper numerical
+consequence $0.380554702762594012\ldots$ \cite{Price2026}.  It is the
+strongest public computer-certified lower-bound claim we found, but it has not
+been recorded as an accepted lower-bound record on the
+\href{https://www.erdosproblems.com/36}{authoritative Erd\H{o}s Problems page}
+as checked on August 17, 2026.
 
-The purpose of this note is to improve that certified lower bound.  Parseval
-constraints were already present in White's larger optimization framework.
-Our contribution is not the discovery of Parseval's identity; it is the direct
-profile-space prefix inequality below, its use in a compact dual certificate,
-and a new directed-rounding verification.
+The purpose of this note is to propose a numerical improvement over that
+public claim.  Parseval energy constraints were already present in White's
+larger optimization framework.  Our contribution is not Parseval's identity
+or the underlying energy constraint; it is the finite profile-space prefix
+projection below, its use in the two binding bins of a compact dual
+certificate, and a new directed-rounding verification.
 
 The source package and reproduction instructions are available at
 \begin{center}
-\url{https://github.com/khanukov/erdos36}.
+\url{https://github.com/khanukov/erdos36}.\\
+The historical priority release \texttt{v0.1.0-preprint} is archived at
+\href{https://doi.org/10.5281/zenodo.21969299}%
+{doi:10.5281/zenodo.21969299}.
 \end{center}
 
 \subsection*{Status and trust boundary}
@@ -93,7 +104,7 @@ package: they are inherited from Price's publicly posted per-bin Arb reports at 
 pinned upstream commit, downloaded and checked against recorded SHA-256
 hashes, after which the package recomputes their largest reported upper
 endpoint.  Thus the outer-bin part trusts the pinned Price certificate and its
-recorded Arb run, whereas the central-bin computation has a fresh MPFR
+recorded Arb \cite{Johansson2017} run, whereas the central-bin computation has a fresh MPFR
 verification.  The new central pair has not yet received an independent
 clean-room reproduction or peer review, and the argument is not Lean-verified.
 
@@ -127,8 +138,72 @@ gives
 \[
  c_E\ge \inf_h\|p_h\|_\infty.
 \]
-We refer to \cite{White2022,Price2026} for a complete proof of the reduction
-and for the ordinary moment and Fourier inequalities used by the certificate.
+Write $p=p_h$ and define its first moment by
+\begin{equation}\label{eq:mean}
+ \mu=\mu(p):=\int_{-2}^2 t p(t)\dd t.
+\end{equation}
+We refer to \cite{White2022,Price2026} for a complete proof of the reduction.
+For clarity, the two ordinary row inequalities used by the new central
+certificate are derived next in our normalization.
+
+\begin{lemma}[Moment and ordinary cosine rows]\label{lem:ordinary-rows}
+Every admissible profile satisfies
+\begin{equation}\label{eq:second-moment}
+ \int_{-2}^2t^2p(t)\dd t=\frac23+\frac{\mu^2}{2}.
+\end{equation}
+For every real $\xi$, with $\sinc(0)=1$ and
+$\sinc(\xi)=\sin(\xi)/\xi$ for $\xi\ne0$,
+\begin{equation}\label{eq:ordinary-cos}
+ \int_{-2}^2p(t)\cos(\xi t)\dd t\le\sinc^2(\xi).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Put
+\[
+ a=\int_0^2xh(x)\dd x.
+\]
+Since $\int_0^2x\dd x=2$, Fubini's theorem and the change of variables
+$y=x+t$ give
+\[
+ \mu=\iint_{[0,2]^2}h(x)g(y)(y-x)\dd x\dd y
+     =(2-a)-a=2-2a.
+\]
+The constraints $0\le h\le1$ and $\int h=1$ imply
+$1/2\le a\le3/2$.  For example, if
+$\delta=\int_0^1(1-h)=\int_1^2h$, then
+\[
+ a-\frac12
+ =-\int_0^1x(1-h(x))\dd x+\int_1^2xh(x)\dd x
+ \ge-\delta+\delta=0;
+\]
+the upper bound follows by the same argument with $h$ and $g$ interchanged.
+Thus $\mu\in[-1,1]$, which is the full mean range covered by the 172 bins.
+If $b=\int_0^2x^2h(x)\dd x$, the same calculation gives
+\[
+ \begin{aligned}
+ \int_{-2}^2t^2p(t)\dd t
+ &=\iint_{[0,2]^2}h(x)g(y)(y-x)^2\dd x\dd y\\
+ &=\left(\frac83-b\right)+b-2a(2-a)
+  =\frac23+\frac{(2-2a)^2}{2},
+ \end{aligned}
+\]
+which is \eqref{eq:second-moment}.
+
+For the Fourier row, set
+\[
+ H_\xi=\int_0^2h(x)e^{i\xi(x-1)}\dd x,
+ \qquad
+ G_\xi=\int_0^2g(x)e^{i\xi(x-1)}\dd x.
+\]
+Then $H_\xi+G_\xi=2\sinc(\xi)$ and
+\[
+ \int_{-2}^2p(t)\cos(\xi t)\dd t
+ =\operatorname{Re}(\overline{H_\xi}G_\xi)
+ =\sinc^2(\xi)-\frac14|H_\xi-G_\xi|^2
+ \le\sinc^2(\xi).
+\]
+\end{proof}
 
 The following elementary dual principle is the mechanism used throughout.
 
@@ -158,9 +233,9 @@ The assumed inequalities give $\int pq\ge1$.  Since $p\ge0$,
 
 \section{The Parseval-prefix inequality}
 
-For $k\in\Z$ define
+For $k\in\Z$ abbreviate
 \[
- H_k=\int_0^2h(x)e^{ik\pi(x-1)}\dd x.
+ H_k:=H_{k\pi}=\int_0^2h(x)e^{ik\pi(x-1)}\dd x.
 \]
 At nonzero integer modes the transform of $g=1-h$ equals $-H_k$, because
 \[
@@ -208,10 +283,27 @@ coupling.
 The pinned upstream certificate partitions the possible first moment into 172
 bins.  Its binding symmetric pair consists of bins 85 and 86,
 \[
- [-0.003125,0],\qquad [0,0.003125].
+ [-0.003125,0]=[-1/320,0],\qquad
+ [0,0.003125]=[0,1/320].
 \]
-The new certificate uses only even rows, so the same multipliers cover both
-bins.  It contains the rows shown in Table~\ref{tab:rows}.
+On either bin, \eqref{eq:second-moment} gives the exact row bound
+\begin{equation}\label{eq:central-second-moment}
+ \int_{-2}^2t^2p(t)\dd t
+ \le B_{t^2}:=\frac23+\frac1{204800}
+ =0.6666715494791666\ldots.
+\end{equation}
+The ordinary cosine rows use $B_\xi=\sinc^2(\xi)$ from
+\eqref{eq:ordinary-cos}; the integer-$\pi$ rows use the sharper bound
+$C_k\le0$ from \eqref{eq:integer-cos}; and a prefix row uses
+$-\sum_{k=1}^K C_k\le1/2$ from \eqref{eq:prefix}.
+
+All these row functions are even.  More explicitly, if $g=1-h$, then
+$p_g(t)=p_h(-t)$ and $\mu(p_g)=-\mu(p_h)$.  Reflection therefore maps the
+negative central bin to the positive central bin without changing the
+integral of any certificate row or of the resulting $q_+$.  The checker runs
+the certificate for $[-1/320,0]$; the same multipliers and bounds consequently
+cover $[0,1/320]$.  The certificate contains the rows shown in
+Table~\ref{tab:rows}.
 
 \begin{table}[ht]
 \centering
@@ -244,7 +336,9 @@ At the theorem target,
 so the certified $D$-side margin is larger than $1.22\times10^{-7}$.
 Lemma~\ref{lem:dual} therefore proves the target on both central bins.
 
-For the other 170 bins, the pinned upstream per-bin Arb report gives
+Removing upstream bins 85 and 86 leaves 170 ordered bins whose union is
+$[-1,-1/320]\cup[1/320,1]$.  For these bins, the pinned upstream per-bin Arb
+report gives
 \[
  D_I\le2.627538530873375790090272175878307131812586378826,
 \]
@@ -252,8 +346,8 @@ which is below $1/0.3805603$ by more than $1.65\times10^{-4}$.  Thus every
 outer certificate remains valid at the new target.
 
 \begin{proof}[Proof of Theorem~\ref{thm:main}]
-The new symmetric central certificate and the 170 pinned outer certificates cover
-the full mean range $[-1,1]$.  Let
+The two central intervals and the 170 retained upstream intervals cover the
+full mean range $[-1,1]$, with no uncovered case.  Let
 \[
  \begin{aligned}
  D_{\mathrm c}&:=2.62770434388489007452190373282,\\
@@ -261,15 +355,17 @@ the full mean range $[-1,1]$.  Let
  D_*&:=\max\{D_{\mathrm c},D_{\mathrm o}\}.
  \end{aligned}
 \]
-The certified bounds above give
-$D_*<1/0.3805603$, uniformly over all 172 bins.  Lemma~\ref{lem:dual}
-therefore yields
+The directed-rounding comparisons give the strict inequality
+$D_*<1/0.3805603$, uniformly over all 172 bins.  For each admissible profile,
+choose a bin containing its mean \eqref{eq:mean}.  Lemma~\ref{lem:dual}
+then yields
 \[
  \|p_h\|_\infty\ge \frac1{D_*}>0.3805603
 \]
-for every admissible $h$, and hence
-$\inf_h\|p_h\|_\infty\ge1/D_*>0.3805603$.  The standard step-function
-reduction then gives $c_E>0.3805603$.
+for that profile.  Consequently
+$\inf_h\|p_h\|_\infty\ge1/D_*>0.3805603$.  The non-strict reduction
+$c_E\ge\inf_h\|p_h\|_\infty$ preserves this already strict numerical
+inequality and gives $c_E>0.3805603$.
 \end{proof}
 
 \section{Directed-rounding verification}
@@ -284,7 +380,7 @@ on unresolved terminal cells it adds a conservative upper rectangle.
 In this version, the SHA-256 digest of
 \texttt{certificate/central\_certificate.json} is
 \begin{center}
-\small\texttt{8e085e786271759acb9063d82e84edcfdd3d73b6f556eecd39bc98c4f9911a8b}.
+\small\texttt{907dae82559cea262c02a8da5d4da945c5cbe2eb862d98d82c76511673ba95cb}.
 \end{center}
 
 The recorded reference run reports
@@ -313,9 +409,12 @@ The improvement is numerically modest,
  0.3805603-0.380554702762594012\ldots
  \approx5.60\times10^{-6},
 \]
-but it is a strict certified advance for a mature open problem.  More
-importantly, it confirms that joint Fourier realizability information can
-strengthen the compact profile-space dual.
+but the strict interval comparison makes it a candidate numerical advance
+over the strongest public computer-certified claim described above.  It is
+not presented as an officially recorded or accepted record.  More
+importantly, the certificate demonstrates how White's known joint Fourier
+energy information can strengthen the compact profile-space dual when it is
+projected into finite prefix rows.
 
 A finite integer prefix uses only the radial energy at integer modes.  Natural
 next steps are shifted Parseval lattices $((k+\theta)\pi)$, which couple cosine

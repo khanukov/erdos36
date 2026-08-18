@@ -911,7 +911,7 @@
     "grid_D": 2.6277037776350767,
     "root_antiderivative_D": 2.6277037744318257,
     "implied_bound": 0.3805604001981634,
-    "margin_to_target": 4.001981633861007e-07,
+    "margin_to_target": 1.001981633861007e-07,
     "root_count_found": 299,
     "free_cosine_rows": 71,
     "exact_pi_modes_after_aggregation": 200,
@@ -930,5 +930,5 @@
       }
     ]
   },
-  "lemma": "For H_k=int_{-1}^1 h(x)e^{ik pi x} dx, Parseval gives p(0)+sum_{k>=1}|H_k|^2=1/2 and C_{k pi}=-|H_k|^2; therefore -sum_{k=1}^K C_{k pi}<=1/2."
+  "lemma": "For H_k=int_0^2 h(x)e^{ik pi (x-1)} dx, Parseval gives p(0)+sum_{k>=1}|H_k|^2=1/2 and C_{k pi}=-|H_k|^2; therefore -sum_{k=1}^K C_{k pi}<=1/2."
 }
