@@ -180,6 +180,43 @@ for expected in (
     if expected not in publish_workflow:
         fail(f"publish workflow missing fail-closed release rule: {expected}")
 
+version_guard = f'''readonly intended_version="{version}"
+          readonly version="$(tr -d '\\r\\n' < VERSION)"
+          if [[ "${{version}}" != "${{intended_version}}" ]]; then
+            echo "release intent mismatch: expected ${{intended_version}}, got ${{version}}" >&2
+            exit 1
+          fi'''
+if version_guard not in publish_workflow:
+    fail("publish workflow VERSION guard is not an exact exiting block")
+
+for callsite in ('--arg title "${release_title}"', '--title "${release_title}"'):
+    if publish_workflow.count(callsite) != 1:
+        fail(f"publish workflow must use the centralized release title exactly once: {callsite}")
+if "hardened preliminary Parseval-prefix bound" in publish_workflow:
+    fail("publish workflow hard-codes the release title instead of reading RELEASE_TITLE.txt")
+
+tag_mismatch_guard = 'if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]'
+existing_release_check = 'if gh release view "${tag}"'
+main_check_definition = publish_workflow.index("require_current_main() {")
+main_check_calls = [
+    match.start()
+    for match in re.finditer(r"^          require_current_main$", publish_workflow, re.MULTILINE)
+]
+artifact_download = publish_workflow.index('gh run download "${SOURCE_RUN_ID}"')
+tag_push = publish_workflow.index('git push origin "refs/tags/${tag}"')
+release_create = publish_workflow.index('gh release create "${tag}"')
+if publish_workflow.index(tag_mismatch_guard) > publish_workflow.index(existing_release_check):
+    fail("publish workflow checks existing release before binding the tag to VERIFIED_SHA")
+if len(main_check_calls) != 2 or not (
+    main_check_definition
+    < main_check_calls[0]
+    < artifact_download
+    < main_check_calls[1]
+    < tag_push
+    < release_create
+):
+    fail("publish workflow must check main before validation and again before tag/release creation")
+
 release_notes = (ROOT / "release" / "RELEASE_NOTES.template.md").read_text(
     encoding="utf-8"
 )

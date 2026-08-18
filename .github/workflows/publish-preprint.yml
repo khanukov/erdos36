@@ -89,14 +89,18 @@ jobs:
             exit 1
           fi
 
-          current_main_sha="$(
-            gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/main" \
-              --jq .object.sha
-          )"
-          if [[ "${current_main_sha}" != "${VERIFIED_SHA}" ]]; then
-            echo "refusing to publish a stale main verification run" >&2
-            exit 1
-          fi
+          require_current_main() {
+            local current_main_sha
+            current_main_sha="$(
+              gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/main" \
+                --jq .object.sha
+            )"
+            if [[ "${current_main_sha}" != "${VERIFIED_SHA}" ]]; then
+              echo "refusing to publish a stale main verification run" >&2
+              exit 1
+            fi
+          }
+          require_current_main
 
           gh run download "${SOURCE_RUN_ID}" --repo "${GITHUB_REPOSITORY}" \
             --name "${artifact}" --dir "${assets_dir}"
@@ -242,6 +246,10 @@ jobs:
                 awk 'NR == 1 {print $1}'
             )"
           fi
+          if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]; then
+            echo "refusing tag ${tag} at a different commit: ${remote_tag_sha}" >&2
+            exit 1
+          fi
           if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             if [[ -z "${remote_tag_sha}" ]]; then
               echo "release ${tag} exists but its tag is missing" >&2
@@ -272,19 +280,6 @@ jobs:
             exit 0
           fi
 
-          if [[ -n "${remote_tag_sha}" && "${remote_tag_sha}" != "${VERIFIED_SHA}" ]]; then
-            echo "refusing to move existing unpublished tag ${tag}: ${remote_tag_sha}" >&2
-            exit 1
-          fi
-
-          if [[ -z "${remote_tag_sha}" ]]; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git tag -a "${tag}" "${VERIFIED_SHA}" \
-              -m "Erdos 36 preliminary unrefereed preprint ${version}"
-            git push origin "refs/tags/${tag}"
-          fi
-
           readonly release_manifest="${assets_dir}/GITHUB_RELEASE_SHA256SUMS.txt"
           (
             cd "${assets_dir}"
@@ -306,6 +301,17 @@ jobs:
           if grep -q '@[A-Z0-9_]*@' "${notes}"; then
             echo "unexpanded release-note token" >&2
             exit 1
+          fi
+
+          # Validation can take several minutes. Recheck main at the last
+          # possible point before creating any public release identity.
+          require_current_main
+          if [[ -z "${remote_tag_sha}" ]]; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git tag -a "${tag}" "${VERIFIED_SHA}" \
+              -m "Erdos 36 preliminary unrefereed preprint ${version}"
+            git push origin "refs/tags/${tag}"
           fi
 
           gh release create "${tag}" \
